@@ -1,0 +1,4 @@
+# Opcional: publicar a página de configuração no Netlify.
+# Veja no README a seção "Acessar do computador" — o jeito recomendado é o Tailscale.
+[build]
+  publish = "web"

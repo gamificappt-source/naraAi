@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nara Painel</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%237ee0c3'/><text x='50' y='66' font-size='50' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%230d1117'>N</text></svg>">
+<style>
+:root{
+  --bg:#0d1117;--panel:#161b22;--panel2:#1c232d;--line:#2a3240;--text:#e6edf3;--muted:#8b98a9;
+  --acc:#7ee0c3;--acc2:#5aa9ff;--warn:#f2c14e;--bad:#ff6b6b;--good:#5fd38d;--radius:14px;
+}
+:root[data-theme="light"]{--bg:#f4f6f9;--panel:#fff;--panel2:#f0f3f7;--line:#d9dee6;--text:#18202b;--muted:#5d6b7d;--acc:#0f9d7a;--acc2:#2f6fd6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--acc2)}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:12px;max-width:1200px;margin:auto;padding:10px 16px}
+.logo{width:34px;height:34px;border-radius:50%;background:var(--acc);color:#0d1117;display:grid;place-items:center;font-weight:800}
+.top h1{font-size:18px;margin:0}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}
+.dot.on{background:var(--good);box-shadow:0 0 8px var(--good)}
+.status{font-size:13px;color:var(--muted);margin-left:auto;text-align:right}
+nav{display:flex;gap:4px;max-width:1200px;margin:auto;padding:0 12px;overflow-x:auto}
+nav button{background:none;border:0;color:var(--muted);padding:10px 12px;font:inherit;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+nav button.active{color:var(--text);border-bottom-color:var(--acc)}
+main{max-width:1200px;margin:auto;padding:16px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;min-width:0}
+.card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card h3{font-size:13px;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit}
+textarea{min-height:84px;resize:vertical}
+input[type=color]{height:40px;padding:3px}
+input[type=checkbox]{width:auto;transform:scale(1.25);margin-right:8px}
+.check{display:flex;align-items:center;color:var(--text);font-size:14px;margin:10px 0}
+.row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.btn{background:var(--acc);color:#0d1117;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
+.btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.btn.bad{background:var(--bad);color:#fff}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:4px}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+.pill.done{color:var(--good);border-color:var(--good)}
+.pill.failed{color:var(--bad);border-color:var(--bad)}
+.pill.producing,.pill.publishing,.pill.queued,.pill.ready{color:var(--acc2);border-color:var(--acc2)}
+.pill.awaiting_approval,.pill.atrasado{color:var(--warn);border-color:var(--warn)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.item .t{font-weight:600}
+.item .s{font-size:12.5px;color:var(--muted);word-break:break-word}
+.kpi{display:flex;gap:10px;flex-wrap:wrap}
+.kpi div{flex:1;min-width:110px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.kpi b{display:block;font-size:20px}
+.kpi small{color:var(--muted)}
+.up{color:var(--good)}.down{color:var(--bad)}
+.chat{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto;margin-bottom:10px}
+.msg{padding:8px 11px;border-radius:12px;max-width:88%;font-size:14px}
+.msg.voce{align-self:flex-end;background:var(--acc2);color:#fff}
+.msg.nara{align-self:flex-start;background:var(--panel2);border:1px solid var(--line)}
+.preview{display:flex;gap:6px;overflow-x:auto;margin-top:8px}
+.preview img{height:150px;border-radius:8px}
+.preview video{height:260px;border-radius:8px;background:#000}
+.logs{font:12px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;max-height:380px;overflow:auto;background:var(--panel2);padding:10px;border-radius:10px;word-break:break-all}
+.ref img{max-width:100%;max-height:220px;border-radius:10px;margin-top:8px}
+.hide{display:none!important}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--acc);padding:10px 16px;border-radius:12px;z-index:20;max-width:92vw}
+.login{max-width:420px;margin:12vh auto}
+.profbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:14px}
+.profbar select{max-width:340px}
+.steps li{margin:6px 0}
+code{background:var(--panel2);padding:1px 6px;border-radius:6px;font-size:13px}
+@media (max-width:560px){main{padding:12px}.card{padding:13px}.status{font-size:11px}}
+</style>
+</head>
+<body>
+<header class="hide" id="hdr">
+  <div class="top">
+    <div class="logo">N</div><h1>Nara</h1>
+    <div class="status"><span class="dot" id="dot"></span><span id="stxt">conectando…</span></div>
+  </div>
+  <nav id="nav">
+    <button data-tab="painel" class="active">Painel</button>
+    <button data-tab="perfis">Perfis</button>
+    <button data-tab="chaves">Chaves e ajustes</button>
+    <button data-tab="sistema">Sistema</button>
+    <button data-tab="ajuda">Ajuda</button>
+  </nav>
+</header>
+
+<!-- LOGIN -->
+<div class="login card" id="login">
+  <h2><span class="logo" style="width:28px;height:28px">N</span> Entrar na Nara</h2>
+  <div id="srvBox">
+    <label>Endereço da Nara (celular)</label>
+    <input id="srv" placeholder="http://100.x.x.x:8080">
+    <div class="hint">Só precisa preencher se você abriu esta página fora do celular (ex.: Netlify). Abrindo pelo próprio celular ou pelo IP dele, deixe vazio.</div>
+  </div>
+  <label>Senha da página</label>
+  <input id="pwd" type="password" placeholder="aparece no terminal do Termux">
+  <div class="actions"><button class="btn" id="btnLogin">Entrar</button></div>
+  <div class="hint" id="loginErr"></div>
+</div>
+
+<main class="hide" id="app">
+<!-- PAINEL -->
+<section data-page="painel">
+  <div class="grid">
+    <div class="card">
+      <h2>🗣️ Falar com a Nara</h2>
+      <div class="chat" id="chat"></div>
+      <div style="display:flex;gap:8px">
+        <input id="cmd" placeholder='Ex.: "Nara, posta um vídeo extra hoje no perfil X"'>
+        <button class="btn" id="btnCmd">Enviar</button>
+      </div>
+      <div class="actions">
+        <button class="btn sec sm" id="btnBrief">☀️ Briefing do dia</button>
+        <button class="btn sec sm" id="btnStats">📊 Atualizar números</button>
+        <button class="btn sec sm" id="btnPause"></button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📅 Agenda de hoje</h2>
+      <div class="list" id="today"></div>
+    </div>
+    <div class="card">
+      <h2>📈 Perfis (seguidores)</h2>
+      <div class="list" id="stats"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h2>🎬 Produções <span class="pill" id="busy"></span></h2>
+    <div class="actions" style="margin:0 0 12px">
+      <select id="qProf" style="max-width:220px"></select>
+      <select id="qType" style="max-width:160px"><option value="video">Vídeo</option><option value="carousel">Carrossel</option><option value="image">Imagem única</option></select>
+      <input id="qTopic" placeholder="Tema (opcional — vazio = Nara escolhe)" style="flex:1;min-width:200px">
+      <button class="btn" id="btnProduce">Produzir agora</button>
+    </div>
+    <div class="list" id="jobs"></div>
+  </div>
+</section>
+
+<!-- PERFIS -->
+<section data-page="perfis" class="hide">
+  <div class="profbar">
+    <div style="flex:1;min-width:220px"><label>Perfil que você quer gerenciar</label><select id="profSel"></select></div>
+    <button class="btn sec" id="btnNewProf">+ Novo perfil</button>
+    <button class="btn" id="btnSaveProf">💾 Salvar perfil</button>
+  </div>
+  <div id="profEmpty" class="card hide">Nenhum perfil ainda. Clique em <b>+ Novo perfil</b>.</div>
+  <div class="grid" id="profForm">
+    <div class="card">
+      <h2>🧭 Básico</h2>
+      <label>Nome do perfil</label><input data-k="name">
+      <label class="check"><input type="checkbox" data-k="enabled">Perfil ativo (produzindo e postando)</label>
+      <label>Nicho / assunto</label><input data-k="niche" placeholder="Ex.: casos de investigação reais, curiosidades de história…">
+      <label>Público</label><input data-k="audience" placeholder="Ex.: brasileiros 18-35 que gostam de mistério">
+      <div class="row">
+        <div><label>Idioma</label><select data-k="language"><option>pt-BR</option><option>en-US</option><option>es-ES</option></select></div>
+        <div><label>Tom</label><input data-k="tone"></div>
+      </div>
+      <label>Evitar (assuntos/palavras)</label><input data-k="avoid">
+      <label>Fila de temas (1 por linha — a Nara usa estes primeiro)</label>
+      <textarea data-k="topics" data-list="1" placeholder="O caso do voo 571&#10;A cidade que sumiu do mapa"></textarea>
+      <div class="hint">Quando a fila acaba, a Nara pesquisa temas novos sozinha.</div>
+    </div>
+
+    <div class="card">
+      <h2>⏰ Quantidade e horários</h2>
+      <div class="row">
+        <div><label>Vídeos por dia</label><input type="number" min="0" max="20" data-k="videosPerDay"></div>
+        <div><label>Carrosséis por dia</label><input type="number" min="0" max="20" data-k="carouselsPerDay"></div>
+        <div><label>Imagens por dia</label><input type="number" min="0" max="20" data-k="imagesPerDay"></div>
+      </div>
+      <div class="row">
+        <div><label>Começa às</label><input type="time" data-k="windowStart"></div>
+        <div><label>Termina às</label><input type="time" data-k="windowEnd"></div>
+      </div>
+      <label>Horários fixos dos vídeos (opcional)</label><input data-k="customTimes" placeholder="09:00, 12:30, 19:00">
+      <div class="hint">Se deixar vazio, a Nara espalha os posts entre o início e o fim.</div>
+      <label class="check"><input type="checkbox" data-k="autoPost">Postar sozinha (desmarcado = espera minha aprovação no Painel)</label>
+      <div class="hint" id="boostInfo"></div>
+      <h3>Prévia da agenda de hoje</h3>
+      <div class="list" id="slotPrev"></div>
+    </div>
+
+    <div class="card">
+      <h2>🎬 Vídeo</h2>
+      <div class="row">
+        <div><label>Formato</label><select data-k="videoFormat"><option value="short">Vertical 9:16 (Shorts/Reels)</option><option value="long">Horizontal 16:9 (YouTube)</option></select></div>
+        <div><label>Duração (segundos)</label><input type="number" min="15" max="600" data-k="videoSeconds"></div>
+      </div>
+      <div class="row">
+        <div><label>Estilo visual</label><select data-k="videoStyle">
+          <option value="2d">2D ilustrado</option><option value="3d">3D</option><option value="realista">Fotos realistas</option>
+          <option value="documentario">Documentário / investigação</option><option value="anime">Anime</option><option value="minimalista">Minimalista</option></select></div>
+        <div><label>Imagens vêm de</label><select data-k="imageSource">
+          <option value="mix">Misto (internet + IA)</option><option value="web">Só internet (fotos reais)</option><option value="ai">Só geradas por IA</option></select></div>
+      </div>
+      <label>Seu prompt do vídeo (o mesmo que você usa hoje)</label>
+      <textarea data-k="videoPrompt" style="min-height:140px" placeholder="Ex.: Vídeo de investigação, clima tenso, mostrar fotos reais dos locais, mapas, recortes de jornal…"></textarea>
+      <div class="row">
+        <div><label>Voz da narração (Google)</label><select data-k="voice">
+          <option>Kore</option><option>Puck</option><option>Charon</option><option>Fenrir</option><option>Aoede</option><option>Leda</option><option>Orus</option><option>Zephyr</option>
+          <option>Enceladus</option><option>Iapetus</option><option>Algenib</option><option>Gacrux</option><option>Sadaltager</option><option>Achird</option></select></div>
+        <div><label class="check" style="margin-top:32px"><input type="checkbox" data-k="music">Música de fundo</label></div>
+      </div>
+      <label>Jeito de narrar</label><input data-k="voiceStyle">
+    </div>
+
+    <div class="card">
+      <h2>💬 Legendas do vídeo</h2>
+      <div class="row">
+        <div><label>Fonte</label><select data-k="subtitle.font"><option>Anton</option><option>Bebas Neue</option><option>Poppins</option><option>Montserrat</option><option>Roboto</option></select></div>
+        <div><label>Tamanho</label><input type="number" min="30" max="160" data-k="subtitle.size"></div>
+        <div><label>Palavras por vez</label><input type="number" min="1" max="8" data-k="subtitle.wordsPerLine"></div>
+      </div>
+      <div class="row">
+        <div><label>Cor do texto</label><input type="color" data-k="subtitle.color"></div>
+        <div><label>Palavra em destaque</label><input type="color" data-k="subtitle.highlight"></div>
+        <div><label>Contorno</label><input type="color" data-k="subtitle.outline"></div>
+      </div>
+      <div class="row">
+        <div><label>Posição</label><select data-k="subtitle.position"><option value="top">Em cima</option><option value="middle">Meio</option><option value="bottom">Embaixo</option></select></div>
+        <div><label class="check" style="margin-top:32px"><input type="checkbox" data-k="subtitle.uppercase">MAIÚSCULAS</label></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🎨 Referência visual e cores</h2>
+      <label>Imagem de referência do estilo</label>
+      <input type="file" id="refFile" accept="image/png,image/jpeg,image/webp">
+      <div class="ref" id="refBox"></div>
+      <div class="hint">Envie uma imagem no estilo que você quer (ex.: um frame 2D de investigação). O Google analisa as cores e o traço e a Nara segue essa linha.</div>
+      <label>Estilo entendido pela IA</label><textarea data-k="styleAnalysis" placeholder="(preenchido sozinho depois de enviar a referência — pode editar)"></textarea>
+      <label>Cores da marca (fundo, destaque, texto)</label>
+      <div class="row"><input type="color" data-k="palette.0"><input type="color" data-k="palette.1"><input type="color" data-k="palette.2"></div>
+    </div>
+
+    <div class="card">
+      <h2>🖼️ Carrossel e imagem</h2>
+      <div class="row">
+        <div><label>Slides por carrossel</label><input type="number" min="2" max="10" data-k="carouselSlides"></div>
+        <div><label>Fonte</label><select data-k="carouselFont"><option>Poppins</option><option>Montserrat</option><option>Anton</option><option>Bebas Neue</option><option>Roboto</option></select></div>
+      </div>
+      <label>Instruções do carrossel</label><textarea data-k="carouselPrompt" placeholder="Ex.: Cada slide com um fato curto, capa com pergunta polêmica…"></textarea>
+      <label>Como escrever a legenda</label><textarea data-k="captionPrompt"></textarea>
+      <label>Hashtags fixas</label><input data-k="hashtags" placeholder="#misterio #investigacao">
+    </div>
+
+    <div class="card">
+      <h2>▶️ YouTube</h2>
+      <label class="check"><input type="checkbox" data-k="youtube.enabled">Postar no YouTube</label>
+      <div class="row">
+        <div><label>Visibilidade</label><select data-k="youtube.privacy"><option value="public">Público</option><option value="unlisted">Não listado</option><option value="private">Privado</option></select></div>
+      </div>
+      <div class="item" style="margin-top:10px"><div class="t" id="ytStatus">—</div>
+        <div class="actions">
+          <button class="btn sm" id="btnYt">Conectar canal do YouTube</button>
+        </div>
+        <div id="ytPaste" class="hide">
+          <label>Se a página de retorno não abriu (você está no computador), copie o endereço inteiro da barra do navegador e cole aqui:</label>
+          <input id="ytCode" placeholder="http://localhost:8080/oauth/youtube/callback?state=…&code=…">
+          <div class="actions"><button class="btn sm" id="btnYtCode">Confirmar</button></div>
+        </div>
+      </div>
+      <div class="hint">Antes, cole o Client ID/Secret do Google em “Chaves e ajustes”. Veja o passo a passo em Ajuda.</div>
+    </div>
+
+    <div class="card">
+      <h2>📸 Instagram</h2>
+      <label class="check"><input type="checkbox" data-k="instagram.enabled">Postar no Instagram</label>
+      <label>ID da conta do Instagram (opcional — a Nara descobre pelo token)</label><input data-k="instagram.userId" placeholder="1784…">
+      <label>Token de acesso (longa duração)</label><input data-k="instagram.accessToken" placeholder="IGAA…">
+      <div class="actions"><button class="btn sec sm" id="btnIgTest">Testar conexão</button><span class="hint" id="igStatus"></span></div>
+      <div class="hint">A conta precisa ser Profissional (Criador ou Empresa). O token é renovado sozinho toda semana.</div>
+    </div>
+
+    <div class="card">
+      <h2>🗑️ Zona de perigo</h2>
+      <button class="btn bad" id="btnDelProf">Apagar este perfil</button>
+    </div>
+  </div>
+</section>
+
+<!-- CHAVES -->
+<section data-page="chaves" class="hide">
+  <div class="grid">
+    <div class="card">
+      <h2>🔑 Chaves de API</h2>
+      <label>DeepSeek API key (roteiros)</label><input data-s="deepseekKey" placeholder="sk-…">
+      <div class="hint">Pegue em platform.deepseek.com → API keys.</div>
+      <label>Google AI Studio API key (voz, análise de imagem e reserva de texto) — versão grátis</label><input data-s="googleKey" placeholder="AIza…">
+      <div class="hint">Pegue em aistudio.google.com → Get API key. A versão grátis tem limite diário de narrações.</div>
+      <label>Pexels API key (opcional, mais fotos grátis)</label><input data-s="pexelsKey">
+      <h3>YouTube (Google Cloud – OAuth)</h3>
+      <label>Client ID</label><input data-s="youtubeClientId" placeholder="….apps.googleusercontent.com">
+      <label>Client Secret</label><input data-s="youtubeClientSecret">
+      <div class="hint">No Google Cloud, crie a credencial do tipo <b>App para computador (Desktop)</b>. Veja o passo a passo no README.</div>
+      <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button><button class="btn sec" id="btnTestKeys">Testar chaves</button></div>
+      <div class="hint" id="keysOut"></div>
+    </div>
+    <div class="card">
+      <h2>🤖 Nara (voz e Atom S3R)</h2>
+      <label>Palavra de ativação</label><input data-s="nara.wakeWord">
+      <label class="check"><input type="checkbox" data-s="nara.speakOnPhone">Falar pelo alto-falante do celular</label>
+      <label class="check"><input type="checkbox" data-s="nara.speakOnDevice">Mandar a voz para o Atom S3R (se tiver alto-falante)</label>
+      <label class="check"><input type="checkbox" data-s="nara.listenOnPhoneAfterWake">Depois do briefing, ouvir pedido pelo microfone do celular</label>
+      <label>Briefing automático todo dia às (vazio = só quando chamar)</label><input type="time" data-s="nara.briefingTime">
+      <label>Token do Atom S3R (copie para o firmware)</label><input id="devTok" readonly>
+      <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button></div>
+    </div>
+    <div class="card">
+      <h2>⚙️ Geral</h2>
+      <label>Fuso horário</label><input data-s="timezone">
+      <div class="row">
+        <div><label>Qualidade do vídeo</label><select data-s="render.quality"><option value="1080">1080p</option><option value="720">720p (mais rápido)</option></select></div>
+        <div><label>Quadros por segundo</label><select data-s="render.fps"><option value="30">30</option><option value="24">24</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Modelo DeepSeek</label><input data-s="deepseekModel"></div>
+        <div><label>Modelo Gemini (texto)</label><input data-s="geminiTextModel"></div>
+        <div><label>Modelo Gemini (voz)</label><input data-s="geminiTtsModel"></div>
+      </div>
+      <label>Nova senha da página (deixe vazio para manter)</label><input id="newPwd" type="text">
+      <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button><button class="btn sec" id="btnLogout">Sair</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- SISTEMA -->
+<section data-page="sistema" class="hide">
+  <div class="grid">
+    <div class="card"><h2>📡 Como acessar</h2><div id="sysInfo" class="list"></div></div>
+    <div class="card" style="grid-column:1/-1"><h2>🧾 Registro (últimas linhas)</h2><div class="logs" id="logs"></div></div>
+  </div>
+</section>
+
+<!-- AJUDA -->
+<section data-page="ajuda" class="hide">
+  <div class="card">
+    <h2>📘 Resumo rápido</h2>
+    <ol class="steps">
+      <li><b>Chaves e ajustes:</b> cole a chave do DeepSeek e a do Google AI Studio → Salvar → Testar chaves.</li>
+      <li><b>Perfis:</b> crie um perfil por conta, escolha quantos vídeos/carrosséis por dia, o estilo, envie a imagem de referência e cole o seu prompt.</li>
+      <li><b>YouTube:</b> cole Client ID/Secret em Chaves → no perfil, clique “Conectar canal”, escolha o canal certo.</li>
+      <li><b>Instagram:</b> cole o ID da conta e o token no perfil → Testar conexão.</li>
+      <li><b>Teste:</b> no Painel, escolha o perfil e clique “Produzir agora”. Deixe “Postar sozinha” desmarcado no primeiro teste para revisar.</li>
+      <li><b>Música:</b> coloque arquivos .mp3 sem direitos autorais na pasta <code>naraAi/server/data/music</code> (ou numa subpasta com o ID do perfil).</li>
+    </ol>
+    <p class="hint">O guia completo, com fotos de onde clicar, está no arquivo <code>README.md</code> do projeto.</p>
+  </div>
+</section>
+</main>
+
+<div class="toast hide" id="toast"></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const store = {
+  get(k) { try { return localStorage.getItem(k) || ''; } catch (_) { return ''; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (_) {} },
+};
+let SRV = store.get('nara_srv');
+let TOKEN = store.get('nara_token');
+let S = null; // estado do servidor
+let curProfId = store.get('nara_prof');
+let dirty = false;
+
+function toast(msg, ms = 3500) {
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hide');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add('hide'), ms);
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+async function api(path, opts = {}) {
+  const res = await fetch(SRV + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'x-nara-token': TOKEN, ...(opts.headers || {}) },
+    body: opts.body && typeof opts.body !== 'string' ? JSON.stringify(opts.body) : opts.body,
+  });
+  const d = await res.json().catch(() => ({}));
+  if (res.status === 401) { showLogin('Senha necessária'); throw new Error('Senha necessária'); }
+  if (!res.ok) throw new Error(d.error || 'Erro ' + res.status);
+  return d;
+}
+
+// ---------- login ----------
+async function detectServer() {
+  if (SRV) return;
+  try { const r = await fetch('/api/ping'); if (r.ok && (await r.json()).name === 'Nara') { SRV = ''; $('#srvBox').classList.add('hide'); return; } } catch (_) {}
+  $('#srvBox').classList.remove('hide');
+}
+function showLogin(err) {
+  $('#login').classList.remove('hide'); $('#app').classList.add('hide'); $('#hdr').classList.add('hide');
+  $('#loginErr').textContent = err || '';
+  $('#srv').value = SRV;
+}
+$('#btnLogin').onclick = async () => {
+  const srvIn = $('#srv').value.trim().replace(/\/$/, '');
+  if (!$('#srvBox').classList.contains('hide')) SRV = srvIn;
+  TOKEN = $('#pwd').value.trim();
+  try {
+    const r = await fetch(SRV + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: TOKEN }) });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Falhou');
+    store.set('nara_srv', SRV); store.set('nara_token', TOKEN);
+    start();
+  } catch (e) { $('#loginErr').textContent = '❌ ' + e.message + (SRV ? '' : ' — confira o endereço'); }
+};
+$('#pwd').addEventListener('keydown', (e) => e.key === 'Enter' && $('#btnLogin').click());
+$('#btnLogout').onclick = () => { store.del('nara_token'); TOKEN = ''; showLogin(); };
+
+// ---------- abas ----------
+$$('#nav button').forEach((b) => (b.onclick = () => {
+  $$('#nav button').forEach((x) => x.classList.toggle('active', x === b));
+  $$('[data-page]').forEach((p) => p.classList.toggle('hide', p.dataset.page !== b.dataset.tab));
+  store.set('nara_tab', b.dataset.tab);
+}));
+
+// ---------- helpers de formulário ----------
+function getPath(o, k) { return k.split('.').reduce((a, p) => (a == null ? a : a[p]), o); }
+function setPath(o, k, v) {
+  const ps = k.split('.'); let a = o;
+  ps.slice(0, -1).forEach((p, i) => { if (a[p] == null) a[p] = /^\d+$/.test(ps[i + 1]) ? [] : {}; a = a[p]; });
+  a[ps[ps.length - 1]] = v;
+}
+function fill(el, v) {
+  if (el.type === 'checkbox') el.checked = !!v;
+  else if (el.dataset.list) el.value = (v || []).join('\n');
+  else if (el.type === 'color') el.value = /^#[0-9a-f]{6}$/i.test(v || '') ? v : '#000000';
+  else el.value = v ?? '';
+}
+function read(el) {
+  if (el.type === 'checkbox') return el.checked;
+  if (el.type === 'number') return Number(el.value);
+  if (el.dataset.list) return el.value.split('\n').map((x) => x.trim()).filter(Boolean);
+  return el.value;
+}
+
+// ---------- estado ----------
+async function refresh() {
+  try {
+    S = await api('/api/state');
+    $('#dot').classList.add('on');
+    $('#stxt').textContent = `online · ${S.now.time} · ${S.busy ? 'produzindo…' : 'livre'}`;
+    renderPainel(); renderSistema();
+    if (!dirty) { renderProfiles(); renderSettings(); }
+  } catch (e) {
+    $('#dot').classList.remove('on'); $('#stxt').textContent = 'sem conexão com o celular';
+  }
+}
+
+const TYPE = { video: '🎬 Vídeo', carousel: '🖼️ Carrossel', image: '🖼️ Imagem' };
+const ST = { queued: 'na fila', producing: 'produzindo', awaiting_approval: 'aguardando aprovação', ready: 'pronto p/ postar', publishing: 'postando', done: 'postado', failed: 'falhou', agendado: 'agendado', atrasado: 'atrasado' };
+function fileUrl(f) { return `${SRV}/files/${encodeURI(f)}?t=${encodeURIComponent(TOKEN)}`; }
+
+function renderPainel() {
+  // chat
+  const chat = $('#chat');
+  const atBottom = chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 20;
+  chat.innerHTML = S.conversation.map((m) => `<div class="msg ${m.role}">${esc(m.text)}</div>`).join('') || '<div class="hint">Diga “Nara, bom dia” ou peça algo.</div>';
+  if (atBottom) chat.scrollTop = chat.scrollHeight;
+  $('#btnPause').textContent = S.settings.paused ? '▶️ Retomar postagens' : '⏸️ Pausar tudo';
+  // agenda
+  $('#today').innerHTML = S.today.map((s) => `<div class="item"><div class="t">${s.time} · ${esc(s.profile)} · ${TYPE[s.type]}</div><div class="s"><span class="pill ${s.status}">${ST[s.status] || s.status}</span> ${esc(s.title || '')}</div></div>`).join('') || '<div class="hint">Nada agendado hoje. Configure em Perfis.</div>';
+  // stats
+  $('#stats').innerHTML = (S.stats.perfis || []).map((r) => {
+    const d = (v) => (v == null ? '' : v > 0 ? `<span class="up">+${v}</span>` : v < 0 ? `<span class="down">${v}</span>` : '<span>0</span>');
+    return `<div class="item"><div class="t">${esc(r.profile)}</div><div class="kpi">
+      ${r.youtube ? `<div><small>YouTube</small><b>${r.youtube.inscritos.toLocaleString('pt-BR')}</b>${d(r.youtube.variacao)}</div>` : ''}
+      ${r.instagram ? `<div><small>Instagram</small><b>${r.instagram.seguidores.toLocaleString('pt-BR')}</b>${d(r.instagram.variacao)}</div>` : ''}
+      ${!r.youtube && !r.instagram ? '<span class="hint">sem redes conectadas ou sem dados ainda</span>' : ''}</div></div>`;
+  }).join('') || '<div class="hint">Sem perfis.</div>';
+  // fila
+  const sel = $('#qProf'); const v = sel.value;
+  sel.innerHTML = S.profiles.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  if (v) sel.value = v;
+  $('#busy').textContent = S.busy ? 'trabalhando' : 'livre';
+  $('#jobs').innerHTML = S.jobs.map(jobHtml).join('') || '<div class="hint">Nenhuma produção ainda.</div>';
+}
+
+function jobHtml(j) {
+  const links = Object.entries(j.results || {}).map(([k, r]) => r.url ? `<a href="${esc(r.url)}" target="_blank">${k}</a>` : k).join(' · ');
+  const m = j.metrics || {};
+  const met = [m.youtube && `YT ${m.youtube.views} views, ${m.youtube.likes} likes`, m.instagram && `IG ${m.instagram.views || 0} views, ${m.instagram.likes} curtidas`].filter(Boolean).join(' · ');
+  let prev = '';
+  if (j.files && j.files.length && ['awaiting_approval', 'failed', 'ready'].includes(j.status)) {
+    prev = j.type === 'video'
+      ? `<div class="preview"><video controls preload="none" src="${fileUrl(j.files[0])}"></video></div>`
+      : `<div class="preview">${j.files.map((f) => `<img loading="lazy" src="${fileUrl(f)}">`).join('')}</div>`;
+  }
+  return `<div class="item"><div class="t">${TYPE[j.type]} · ${esc(j.profileName)} <span class="pill ${j.status}">${ST[j.status] || j.status}</span></div>
+    <div class="s">${esc(j.title || j.topic || '(escolhendo tema)')} · ${new Date(j.createdAt).toLocaleString('pt-BR')} · ${esc(j.reason || '')}</div>
+    ${links ? `<div class="s">Postado: ${links}</div>` : ''}${met ? `<div class="s">📊 ${esc(met)}</div>` : ''}
+    ${j.error ? `<div class="s" style="color:var(--bad)">⚠️ ${esc(j.error)}</div>` : ''}
+    ${j.steps && j.steps.length && !['done'].includes(j.status) ? `<div class="s">${esc(j.steps[j.steps.length - 1])}</div>` : ''}
+    ${prev}${j.caption && j.status === 'awaiting_approval' ? `<div class="s" style="white-space:pre-wrap;margin-top:6px">${esc(j.caption)}</div>` : ''}
+    <div class="actions">
+      ${j.status === 'awaiting_approval' ? `<button class="btn sm" onclick="jobAct('${j.id}','approve')">✅ Aprovar e postar</button>` : ''}
+      ${j.status === 'failed' ? `<button class="btn sm sec" onclick="jobAct('${j.id}','retry')">↻ Tentar de novo</button>` : ''}
+      ${!['producing', 'publishing'].includes(j.status) ? `<button class="btn sm sec" onclick="jobDel('${j.id}')">Remover</button>` : ''}
+    </div></div>`;
+}
+async function jobAct(id, act) { try { await api(`/api/jobs/${id}/${act}`, { method: 'POST' }); toast('Ok!'); refresh(); } catch (e) { toast('❌ ' + e.message); } }
+async function jobDel(id) { if (!confirm('Remover esta produção?')) return; await api(`/api/jobs/${id}`, { method: 'DELETE' }); refresh(); }
+
+$('#btnProduce').onclick = async () => {
+  if (!$('#qProf').value) return toast('Crie um perfil primeiro');
+  try { await api('/api/jobs', { method: 'POST', body: { profileId: $('#qProf').value, type: $('#qType').value, topic: $('#qTopic').value } }); $('#qTopic').value = ''; toast('Produção iniciada! Acompanhe abaixo.'); refresh(); } catch (e) { toast('❌ ' + e.message); }
+};
+async function sendCmd(text) {
+  if (!text) return;
+  S.conversation.push({ role: 'voce', text }); renderPainel();
+  $('#cmd').value = ''; $('#btnCmd').disabled = true;
+  try { await api('/api/nara/command', { method: 'POST', body: { text } }); } catch (e) { toast('❌ ' + e.message); }
+  $('#btnCmd').disabled = false; refresh();
+}
+$('#btnCmd').onclick = () => sendCmd($('#cmd').value.trim());
+$('#cmd').addEventListener('keydown', (e) => e.key === 'Enter' && $('#btnCmd').click());
+$('#btnBrief').onclick = async () => { toast('A Nara está preparando o briefing…'); try { await api('/api/nara/briefing', { method: 'POST' }); } catch (e) { toast('❌ ' + e.message); } refresh(); };
+$('#btnStats').onclick = async () => { toast('Buscando números nas redes…'); try { await api('/api/stats/refresh', { method: 'POST' }); toast('Atualizado!'); } catch (e) { toast('❌ ' + e.message); } refresh(); };
+$('#btnPause').onclick = async () => { await api('/api/settings', { method: 'POST', body: { paused: !S.settings.paused } }); refresh(); };
+
+// ---------- perfis ----------
+function curProf() { return S.profiles.find((p) => p.id === curProfId) || S.profiles[0]; }
+function renderProfiles() {
+  const sel = $('#profSel');
+  sel.innerHTML = S.profiles.map((p) => `<option value="${p.id}">${esc(p.name)}${p.enabled ? '' : ' (pausado)'}</option>`).join('');
+  const p = curProf();
+  $('#profEmpty').classList.toggle('hide', !!p);
+  $('#profForm').classList.toggle('hide', !p);
+  if (!p) return;
+  curProfId = p.id; sel.value = p.id;
+  $$('#profForm [data-k]').forEach((el) => fill(el, getPath(p, el.dataset.k)));
+  $('#refBox').innerHTML = p.referenceImage ? `<img src="${fileUrl('refs/' + p.referenceImage)}"><div class="actions"><button class="btn sm sec" onclick="removeRef()">Remover referência</button></div>` : '';
+  $('#ytStatus').textContent = p.youtube.refreshToken ? `✅ Conectado: ${p.youtube.channelTitle || 'canal'}` : '⚪ Não conectado';
+  $('#igStatus').textContent = p.instagram.username ? '@' + p.instagram.username : '';
+  $('#boostInfo').textContent = p.boost && p.boost.until && p.boost.until >= S.now.date ? `🔥 Foco ativo: +${p.boost.extraVideos} vídeo(s)/dia até ${p.boost.until}` : '';
+  slotPreview();
+}
+async function slotPreview() {
+  const p = curProf(); if (!p) return;
+  try {
+    const r = await api('/api/schedule/preview?profileId=' + p.id);
+    $('#slotPrev').innerHTML = r.slots.map((s) => `<div class="item s">${s.time} · ${TYPE[s.type]}</div>`).join('') || '<div class="hint">Nenhum post por dia configurado.</div>';
+  } catch (_) {}
+}
+$('#profSel').onchange = (e) => { if (dirty && !confirm('Descartar alterações não salvas?')) { e.target.value = curProfId; return; } dirty = false; curProfId = e.target.value; store.set('nara_prof', curProfId); renderProfiles(); };
+$('#profForm').addEventListener('input', () => (dirty = true));
+$('#btnNewProf').onclick = async () => {
+  const name = prompt('Nome do novo perfil (ex.: @casos.reais)'); if (!name) return;
+  const r = await api('/api/profiles', { method: 'POST', body: { name } });
+  curProfId = r.profile.id; store.set('nara_prof', curProfId); dirty = false; await refresh(); toast('Perfil criado! Agora configure abaixo.');
+};
+async function saveProfile() {
+  const p = curProf(); if (!p) return;
+  const body = { id: p.id, palette: [...(p.palette || [])] };
+  $$('#profForm [data-k]').forEach((el) => setPath(body, el.dataset.k, read(el)));
+  try { await api('/api/profiles', { method: 'POST', body }); dirty = false; toast('✅ Perfil salvo'); await refresh(); } catch (e) { toast('❌ ' + e.message); }
+}
+$('#btnSaveProf').onclick = saveProfile;
+$('#btnDelProf').onclick = async () => {
+  const p = curProf(); if (!p || !confirm(`Apagar o perfil "${p.name}"? Isso não apaga nada das redes.`)) return;
+  await api('/api/profiles/' + p.id, { method: 'DELETE' }); curProfId = ''; dirty = false; refresh();
+};
+$('#refFile').onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  if (f.size > 8e6) return toast('Imagem muito grande (máx. 8 MB)');
+  const dataUrl = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
+  toast('Enviando e analisando o estilo… (alguns segundos)', 8000);
+  try {
+    const r = await api(`/api/profiles/${curProf().id}/reference`, { method: 'POST', body: { dataUrl } });
+    toast(r.warning || '✅ Referência analisada!'); dirty = false; refresh();
+  } catch (err) { toast('❌ ' + err.message); }
+  e.target.value = '';
+};
+async function removeRef() { await api(`/api/profiles/${curProf().id}/reference`, { method: 'POST', body: {} }); refresh(); }
+$('#btnYt').onclick = async () => {
+  try {
+    if (dirty) await saveProfile();
+    const r = await api('/api/youtube/auth/' + curProf().id);
+    window.open(r.url, '_blank');
+    $('#ytPaste').classList.remove('hide');
+  } catch (e) { toast('❌ ' + e.message); }
+};
+$('#btnYtCode').onclick = async () => {
+  try { const r = await api('/api/youtube/code', { method: 'POST', body: { profileId: curProf().id, code: $('#ytCode').value } }); toast('✅ Conectado: ' + (r.channel || 'canal')); $('#ytPaste').classList.add('hide'); refresh(); } catch (e) { toast('❌ ' + e.message); }
+};
+$('#btnIgTest').onclick = async () => {
+  try { if (dirty) await saveProfile(); const r = await api('/api/instagram/test', { method: 'POST', body: { profileId: curProf().id } }); $('#igStatus').textContent = `✅ @${r.username} · ${r.followers} seguidores`; } catch (e) { $('#igStatus').textContent = '❌ ' + e.message; }
+};
+
+// ---------- configurações ----------
+function renderSettings() {
+  $$('[data-s]').forEach((el) => fill(el, getPath(S.settings, el.dataset.s)));
+  $('#devTok').value = S.settings.deviceToken || '';
+}
+$$('[data-s]').forEach((el) => el.addEventListener('input', () => (dirty = true)));
+$$('[data-save-settings]').forEach((b) => (b.onclick = async () => {
+  const body = {};
+  $$('[data-s]').forEach((el) => setPath(body, el.dataset.s, el.type === 'number' ? Number(el.value) : read(el)));
+  if ($('#newPwd').value.trim()) body.newAdminToken = $('#newPwd').value.trim();
+  try {
+    await api('/api/settings', { method: 'POST', body });
+    if (body.newAdminToken) { TOKEN = body.newAdminToken; store.set('nara_token', TOKEN); $('#newPwd').value = ''; }
+    dirty = false; toast('✅ Salvo'); refresh();
+  } catch (e) { toast('❌ ' + e.message); }
+}));
+$('#btnTestKeys').onclick = async () => {
+  $('#keysOut').textContent = 'Testando…';
+  try { const r = await api('/api/test/keys', { method: 'POST' }); $('#keysOut').innerHTML = Object.entries(r).map(([k, v]) => `<b>${k}</b>: ${esc(v)}`).join('<br>'); } catch (e) { $('#keysOut').textContent = '❌ ' + e.message; }
+};
+
+function renderSistema() {
+  const s = S.system;
+  $('#sysInfo').innerHTML = [
+    `<div class="item"><div class="t">No próprio celular (modo DeX)</div><div class="s">http://localhost:${s.port}</div></div>`,
+    ...s.addresses.map((a) => `<div class="item"><div class="t">${a.startsWith('100.') ? 'De qualquer lugar (Tailscale)' : 'Na mesma rede Wi-Fi'}</div><div class="s">http://${a}:${s.port}</div></div>`),
+    `<div class="item"><div class="s">Ligada há ${Math.round(s.uptime / 3600)}h · memória livre ${s.freeMem} MB · Node ${s.node}</div></div>`,
+  ].join('');
+  const box = $('#logs'); const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+  box.textContent = S.logs.join('\n'); if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+// ---------- início ----------
+async function start() {
+  $('#login').classList.add('hide'); $('#app').classList.remove('hide'); $('#hdr').classList.remove('hide');
+  const tab = store.get('nara_tab'); if (tab) { const b = $(`#nav [data-tab="${tab}"]`); b && b.click(); }
+  await refresh();
+  clearInterval(start.i); start.i = setInterval(refresh, 8000);
+}
+(async () => {
+  await detectServer();
+  if (TOKEN) start(); else showLogin();
+})();
+window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+// Configuração global + perfis. Tudo fica em data/config.json
+const path = require('path');
+const crypto = require('crypto');
+const { DATA_DIR, readJSON, writeJSON, uid } = require('./util');
+
+const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
+
+const DEFAULT_SETTINGS = {
+  adminToken: '', // senha da página (gerada no 1º start)
+  deviceToken: '', // senha do Atom S3R
+  timezone: 'America/Sao_Paulo',
+  deepseekKey: '',
+  deepseekModel: 'deepseek-chat',
+  googleKey: '',
+  geminiTextModel: 'gemini-2.5-flash',
+  geminiTtsModel: 'gemini-2.5-flash-preview-tts',
+  pexelsKey: '', // opcional: mais imagens/fotos grátis
+  youtubeClientId: '',
+  youtubeClientSecret: '',
+  publicUrl: '', // ex.: http://100.x.x.x:8080 (Tailscale) — só informativo
+  paused: false, // pausa geral
+  nara: {
+    wakeWord: 'nara',
+    speakOnPhone: true, // fala pelo alto-falante do celular (termux-tts-speak)
+    speakOnDevice: false, // manda áudio para o Atom (se tiver alto-falante)
+    deviceVoice: 'Kore',
+    briefingTime: '', // ex.: 07:30 → briefing automático (vazio = só quando pedir)
+    listenOnPhoneAfterWake: false, // depois do "bom dia" escuta comando pelo microfone do celular
+  },
+  render: {
+    quality: '1080', // 1080 ou 720
+    fps: 30,
+  },
+};
+
+const DEFAULT_PROFILE = () => ({
+  id: uid('p_'),
+  name: 'Novo perfil',
+  enabled: true,
+  niche: '',
+  audience: '',
+  language: 'pt-BR',
+  tone: 'envolvente, curioso e direto',
+  topics: [], // fila de temas que você quer (usados primeiro)
+  avoid: '',
+  // Vídeos
+  videosPerDay: 1,
+  carouselsPerDay: 0,
+  imagesPerDay: 0,
+  windowStart: '09:00',
+  windowEnd: '21:00',
+  customTimes: '', // "09:00, 18:30" sobrescreve a distribuição automática
+  videoFormat: 'short', // short (9:16) | long (16:9)
+  videoSeconds: 50,
+  videoStyle: '2d', // 2d | 3d | realista | documentario | anime | minimalista
+  imageSource: 'mix', // web | ai | mix
+  videoPrompt: '', // o "prompt do vídeo" que você já usa hoje
+  voice: 'Kore',
+  voiceStyle: 'Fale em português do Brasil, com ritmo dinâmico e tom de narrador de documentário.',
+  music: true,
+  subtitle: {
+    font: 'Anton',
+    size: 80,
+    color: '#FFFFFF',
+    highlight: '#FFD400',
+    outline: '#000000',
+    position: 'middle', // top | middle | bottom
+    uppercase: true,
+    wordsPerLine: 3,
+  },
+  palette: ['#0B0F1A', '#E63946', '#F1FAEE'],
+  referenceImage: '', // arquivo salvo em data/refs
+  styleAnalysis: '', // descrição do estilo gerada pelo Gemini a partir da referência
+  // Carrossel / imagem
+  carouselSlides: 6,
+  carouselPrompt: '',
+  carouselFont: 'Poppins',
+  // Legenda / post
+  captionPrompt: 'Legenda curta, com gancho na primeira linha e chamada para seguir o perfil.',
+  hashtags: '',
+  autoPost: true, // false = fica aguardando sua aprovação na página
+  youtube: { enabled: false, privacy: 'public', refreshToken: '', channelTitle: '', channelId: '' },
+  instagram: { enabled: false, userId: '', accessToken: '', username: '', tokenRefreshedAt: '' },
+  boost: { extraVideos: 0, until: '' }, // "Nara, foca no perfil X"
+});
+
+let cache = null;
+
+function load() {
+  if (cache) return cache;
+  const raw = readJSON(CONFIG_FILE, {});
+  const settings = deepMerge(structuredClone(DEFAULT_SETTINGS), raw.settings || {});
+  let changed = false;
+  if (!settings.adminToken) {
+    settings.adminToken = crypto.randomBytes(4).toString('hex');
+    changed = true;
+  }
+  if (!settings.deviceToken) {
+    settings.deviceToken = crypto.randomBytes(6).toString('hex');
+    changed = true;
+  }
+  const profiles = (raw.profiles || []).map((p) => deepMerge(DEFAULT_PROFILE(), p));
+  cache = { settings, profiles };
+  if (changed) save();
+  return cache;
+}
+
+function save() {
+  writeJSON(CONFIG_FILE, cache);
+}
+
+function deepMerge(base, extra) {
+  for (const [k, v] of Object.entries(extra || {})) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) {
+      deepMerge(base[k], v);
+    } else if (v !== undefined) {
+      base[k] = v;
+    }
+  }
+  return base;
+}
+
+const SECRET_FIELDS = ['deepseekKey', 'googleKey', 'pexelsKey', 'youtubeClientSecret'];
+function mask(v) {
+  if (!v) return '';
+  return v.length <= 8 ? '••••' : v.slice(0, 4) + '••••' + v.slice(-4);
+}
+
+/** Versão para enviar à página (segredos mascarados) */
+function publicView() {
+  const c = load();
+  const s = structuredClone(c.settings);
+  for (const f of SECRET_FIELDS) s[f] = mask(s[f]);
+  delete s.adminToken;
+  const profiles = c.profiles.map((p) => {
+    const q = structuredClone(p);
+    q.youtube.refreshToken = p.youtube.refreshToken ? 'conectado' : '';
+    q.instagram.accessToken = mask(p.instagram.accessToken);
+    return q;
+  });
+  return { settings: s, profiles };
+}
+
+/** Recebe alterações da página. Campos mascarados (com ••) são ignorados. */
+function updateSettings(patch) {
+  const c = load();
+  for (const f of [...SECRET_FIELDS]) {
+    if (typeof patch[f] === 'string' && patch[f].includes('••')) delete patch[f];
+  }
+  delete patch.adminToken;
+  if (patch.newAdminToken) {
+    c.settings.adminToken = String(patch.newAdminToken).trim();
+    delete patch.newAdminToken;
+  }
+  deepMerge(c.settings, patch);
+  save();
+}
+
+function upsertProfile(p) {
+  const c = load();
+  if (p.instagram && typeof p.instagram.accessToken === 'string' && p.instagram.accessToken.includes('••')) delete p.instagram.accessToken;
+  if (p.youtube) delete p.youtube.refreshToken; // só o OAuth altera
+  let existing = c.profiles.find((x) => x.id === p.id);
+  if (!existing) {
+    existing = DEFAULT_PROFILE();
+    if (p.id) existing.id = p.id;
+    c.profiles.push(existing);
+  }
+  const oldRef = existing.referenceImage;
+  deepMerge(existing, p);
+  if (Array.isArray(p.topics)) existing.topics = p.topics;
+  if (Array.isArray(p.palette)) existing.palette = p.palette;
+  if (existing.referenceImage !== oldRef) existing.styleAnalysis = '';
+  save();
+  return existing;
+}
+
+function deleteProfile(id) {
+  const c = load();
+  c.profiles = c.profiles.filter((p) => p.id !== id);
+  save();
+}
+
+function getProfile(id) {
+  return load().profiles.find((p) => p.id === id);
+}
+
+function findProfileByName(name) {
+  if (!name) return null;
+  const n = String(name).toLowerCase().replace(/^@/, '');
+  const ps = load().profiles;
+  return (
+    ps.find((p) => p.id === name) ||
+    ps.find((p) => p.name.toLowerCase() === n) ||
+    ps.find((p) => p.name.toLowerCase().includes(n) || n.includes(p.name.toLowerCase())) ||
+    ps.find((p) => (p.instagram.username || '').toLowerCase() === n)
+  );
+}
+
+module.exports = { load, save, publicView, updateSettings, upsertProfile, deleteProfile, getProfile, findProfileByName, DEFAULT_PROFILE };
