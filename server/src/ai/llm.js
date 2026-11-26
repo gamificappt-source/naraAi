@@ -1,11 +1,28 @@
-// Texto: DeepSeek (principal) com Gemini como reserva. Também visão, voz (TTS) e transcrição pelo Gemini.
+// Divisão de papéis:
+//   CÉREBRO  (conversa da Nara: briefing, pedidos)  → DeepSeek   (reserva: Claude)
+//   MOTOR    (temas, roteiros, carrosséis, estilo)  → Claude     (reserva: DeepSeek, só texto)
+//   NARRAÇÃO dos vídeos                             → Google AI Studio (Gemini TTS)
+//   Voz da própria Nara                             → ai/voice.js (grátis)
 const fs = require('fs');
+const sdk = require('@anthropic-ai/sdk');
 const config = require('../config');
 const { fetchRetry, extractJSON, logger } = require('../util');
 
-const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/models';
+const Anthropic = sdk.default || sdk;
+let claudeClient = null;
+let claudeKeyUsed = '';
+function claude() {
+  const key = config.load().settings.anthropicKey;
+  if (!key) throw new Error('Chave da Claude (Anthropic) não configurada');
+  if (!claudeClient || claudeKeyUsed !== key) {
+    claudeClient = new Anthropic({ apiKey: key, maxRetries: 3, timeout: 10 * 60 * 1000 });
+    claudeKeyUsed = key;
+  }
+  return claudeClient;
+}
 
-async function deepseekChat(messages, { json = false, temperature = 1.0, maxTokens = 4000 } = {}) {
+// ---------------- DeepSeek ----------------
+async function deepseekChat(messages, { json = false, maxTokens = 4000 } = {}) {
   const s = config.load().settings;
   if (!s.deepseekKey) throw new Error('Chave do DeepSeek não configurada');
   const res = await fetchRetry('https://api.deepseek.com/chat/completions', {
@@ -14,7 +31,6 @@ async function deepseekChat(messages, { json = false, temperature = 1.0, maxToke
     body: JSON.stringify({
       model: s.deepseekModel || 'deepseek-chat',
       messages,
-      temperature,
       max_tokens: maxTokens,
       ...(json ? { response_format: { type: 'json_object' } } : {}),
     }),
@@ -24,69 +40,98 @@ async function deepseekChat(messages, { json = false, temperature = 1.0, maxToke
   return data.choices[0].message.content;
 }
 
-async function geminiGenerate(parts, { json = false, temperature = 1.0, model, system } = {}) {
+// ---------------- Claude ----------------
+/** content: string ou blocos (texto/imagem). Devolve só o texto final. */
+async function claudeAsk(system, content, { maxTokens = 16000 } = {}) {
   const s = config.load().settings;
-  if (!s.googleKey) throw new Error('Chave do Google (Gemini) não configurada');
-  const body = {
-    contents: [{ role: 'user', parts }],
-    generationConfig: { temperature, ...(json ? { responseMimeType: 'application/json' } : {}) },
-  };
-  if (system) body.systemInstruction = { parts: [{ text: system }] };
-  const res = await fetchRetry(`${GEMINI}/${model || s.geminiTextModel}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.googleKey },
-    body: JSON.stringify(body),
-  }, { timeoutMs: 180000 });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
-  const cand = data.candidates && data.candidates[0];
-  const text = cand && cand.content && cand.content.parts ? cand.content.parts.map((p) => p.text || '').join('') : '';
-  if (!text) throw new Error('Gemini não devolveu texto: ' + JSON.stringify(data).slice(0, 300));
+  const stream = claude().beta.messages.stream({
+    model: s.claudeModel || 'claude-opus-5-5',
+    max_tokens: maxTokens,
+    system,
+    messages: [{ role: 'user', content }],
+    output_config: { effort: s.claudeEffort || 'medium' },
+    // se o modelo principal recusar, a própria API tenta outro modelo automaticamente
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',
+  });
+  const msg = await stream.finalMessage();
+  if (msg.stop_reason === 'refusal') throw new Error('Claude recusou este pedido (tema sensível). Tente outro tema.');
+  const text = msg.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+  if (!text) throw new Error('Claude não devolveu texto (stop_reason: ' + msg.stop_reason + ')');
   return text;
 }
 
-/** Pergunta ao modelo de texto. Usa DeepSeek; se falhar ou não houver chave, usa Gemini. */
-async function ask(system, user, opts = {}) {
+function claudeErrorMessage(e) {
+  if (e instanceof Anthropic.AuthenticationError) return 'chave da Claude inválida';
+  if (e instanceof Anthropic.PermissionDeniedError) return 'chave da Claude sem permissão (confira créditos em Billing)';
+  if (e instanceof Anthropic.RateLimitError) return 'limite de uso da Claude atingido, tente mais tarde';
+  if (e instanceof Anthropic.APIConnectionError) return 'sem conexão com a Claude';
+  if (e instanceof Anthropic.APIError) return `Claude ${e.status || ''}: ${e.message}`.slice(0, 300);
+  return e.message;
+}
+
+// ---------------- papéis ----------------
+
+/** CÉREBRO da Nara (conversa) — DeepSeek, com Claude de reserva */
+async function brain(system, user, { json = false, maxTokens = 1500 } = {}) {
   const s = config.load().settings;
   if (s.deepseekKey) {
     try {
-      return await deepseekChat([{ role: 'system', content: system }, { role: 'user', content: user }], opts);
+      return await deepseekChat([{ role: 'system', content: system + (json ? '\nResponda SOMENTE com JSON válido.' : '') }, { role: 'user', content: user }], { json, maxTokens });
     } catch (e) {
-      logger.warn('DeepSeek falhou, tentando Gemini:', e.message);
-      if (!s.googleKey) throw e;
+      logger.warn('DeepSeek falhou:', e.message);
+      if (!s.anthropicKey) throw e;
     }
   }
-  return geminiGenerate([{ text: user }], { ...opts, system });
+  return claudeAsk(system + (json ? '\nResponda SOMENTE com JSON válido, sem texto antes ou depois.' : ''), user, { maxTokens: Math.max(maxTokens, 4000) });
 }
 
-async function askJSON(system, user, opts = {}) {
-  const txt = await ask(system + '\nResponda SOMENTE com JSON válido.', user, { ...opts, json: true });
-  return extractJSON(txt);
+/** MOTOR de conteúdo — Claude, com DeepSeek de reserva */
+async function engineJSON(system, user, { maxTokens = 16000 } = {}) {
+  const s = config.load().settings;
+  const sys = system + '\nResponda SOMENTE com um objeto JSON válido, sem texto antes ou depois e sem ```.';
+  if (s.anthropicKey) {
+    try {
+      return extractJSON(await claudeAsk(sys, user, { maxTokens }));
+    } catch (e) {
+      const msg = claudeErrorMessage(e);
+      logger.warn('Claude falhou:', msg);
+      if (!s.deepseekKey) throw new Error(msg);
+    }
+  }
+  return extractJSON(await deepseekChat([{ role: 'system', content: sys }, { role: 'user', content: user }], { json: true, maxTokens: 8000 }));
 }
 
-/** Descreve o estilo visual de uma imagem de referência */
+/** Descreve o estilo visual da imagem de referência (Claude vê imagens) */
 async function analyzeStyle(imagePath) {
   const b64 = fs.readFileSync(imagePath).toString('base64');
-  const mime = imagePath.endsWith('.png') ? 'image/png' : imagePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
-  const txt = await geminiGenerate([
-    { inlineData: { mimeType: mime, data: b64 } },
-    {
-      text:
-        'Você é diretor de arte. Analise esta imagem de referência e responda em JSON: ' +
-        '{"style_prompt": "descrição em INGLÊS, 1 parágrafo, do estilo visual para usar como prompt de geração de imagens (técnica, traço, iluminação, textura, enquadramento, clima)", ' +
-        '"palette": ["#hex1","#hex2","#hex3","#hex4"], "mood": "clima em português", "is_2d": true/false}',
-    },
-  ], { json: true, temperature: 0.4 });
+  const media = imagePath.endsWith('.png') ? 'image/png' : imagePath.endsWith('.webp') ? 'image/webp' : 'image/jpeg';
+  const txt = await claudeAsk(
+    'Você é diretor de arte. Responda SOMENTE com JSON válido.',
+    [
+      { type: 'image', source: { type: 'base64', media_type: media, data: b64 } },
+      {
+        type: 'text',
+        text:
+          'Analise esta imagem de referência e responda em JSON: ' +
+          '{"style_prompt": "descrição em INGLÊS, 1 parágrafo, do estilo visual para usar como prompt de geração de imagens (técnica, traço, iluminação, textura, enquadramento, clima)", ' +
+          '"palette": ["#hex1","#hex2","#hex3","#hex4"], "mood": "clima em português", "is_2d": true}',
+      },
+    ],
+    { maxTokens: 4000 }
+  );
   return extractJSON(txt);
 }
 
-/** Texto → áudio WAV (Gemini TTS). Retorna Buffer PCM 16-bit 24kHz mono. */
+// ---------------- Google: só narração dos vídeos ----------------
+const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+/** Texto → PCM 16-bit 24kHz mono (Gemini TTS, versão grátis do AI Studio) */
 async function tts(text, voice = 'Kore', styleInstruction = '') {
   const s = config.load().settings;
-  if (!s.googleKey) throw new Error('Chave do Google não configurada (necessária para a narração)');
-  const chunks = splitText(text, 3500);
+  if (!s.googleKey) throw new Error('Chave do Google AI Studio não configurada (usada para narrar os vídeos)');
   const pcms = [];
-  for (const chunk of chunks) {
+  for (const chunk of splitText(text, 3500)) {
     const res = await fetchRetry(`${GEMINI}/${s.geminiTtsModel}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.googleKey },
@@ -99,9 +144,9 @@ async function tts(text, voice = 'Kore', styleInstruction = '') {
       }),
     }, { timeoutMs: 300000, tries: 4 });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(`Gemini TTS ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+    if (!res.ok) throw new Error(`Google TTS ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
     const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
-    if (!part) throw new Error('Gemini TTS não devolveu áudio');
+    if (!part) throw new Error('Google TTS não devolveu áudio');
     pcms.push(Buffer.from(part.inlineData.data, 'base64'));
   }
   return Buffer.concat(pcms);
@@ -125,15 +170,6 @@ function pcmToWav(pcm, sampleRate = 24000, channels = 1) {
   return Buffer.concat([h, pcm]);
 }
 
-/** Áudio (wav) → texto */
-async function transcribe(wavBuffer) {
-  const txt = await geminiGenerate([
-    { inlineData: { mimeType: 'audio/wav', data: wavBuffer.toString('base64') } },
-    { text: 'Transcreva exatamente o que foi falado (português do Brasil). Se não houver fala, responda apenas: [silencio]' },
-  ], { temperature: 0 });
-  return txt.trim();
-}
-
 function splitText(text, max) {
   const out = [];
   let cur = '';
@@ -148,4 +184,4 @@ function splitText(text, max) {
   return out;
 }
 
-module.exports = { ask, askJSON, deepseekChat, geminiGenerate, analyzeStyle, tts, pcmToWav, transcribe };
+module.exports = { brain, engineJSON, claudeAsk, deepseekChat, analyzeStyle, tts, pcmToWav, splitText, claudeErrorMessage };

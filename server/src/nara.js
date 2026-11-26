@@ -1,10 +1,11 @@
 // A "cabeça" da Nara: briefing do dia, entender pedidos e falar
 const config = require('./config');
 const llm = require('./ai/llm');
+const voiceIO = require('./ai/voice');
 const jobs = require('./jobs');
 const scheduler = require('./scheduler');
 const analytics = require('./analytics');
-const { run, commandExists, nowInTz, addDays, logger } = require('./util');
+const { nowInTz, addDays, extractJSON, logger } = require('./util');
 
 const conversation = [];
 let lastAudio = null; // PCM 24kHz para o Atom S3R (se tiver alto-falante)
@@ -16,21 +17,18 @@ function remember(role, text) {
 }
 
 let speaking = Promise.resolve();
+/** Fala com a voz da Nara (grátis): no celular e/ou no Atom S3R */
 async function speak(text) {
   lastReply = text;
   remember('nara', text);
-  const s = config.load().settings.nara;
-  if (s.speakOnPhone && (await commandExists('termux-tts-speak'))) {
-    speaking = speaking.then(() => run('termux-tts-speak', ['-l', 'pt', '-r', '1.05', text]).catch((e) => logger.warn('TTS celular:', e.message)));
-  }
   lastAudio = null;
-  if (s.speakOnDevice) {
-    try {
-      lastAudio = await llm.tts(text, s.deviceVoice || 'Kore', 'Fale de forma natural e simpática, em português do Brasil.');
-    } catch (e) {
-      logger.warn('TTS para o dispositivo falhou:', e.message);
-    }
+  const s = config.load().settings.nara;
+  let file = null;
+  if (s.speakOnPhone || s.speakOnDevice) {
+    try { file = await voiceIO.synth(text); } catch (e) { logger.warn('Voz:', e.message); }
   }
+  if (s.speakOnDevice && file) lastAudio = await voiceIO.toPcm(file).catch(() => null);
+  if (s.speakOnPhone) speaking = speaking.then(() => voiceIO.playOnPhone(file, text)).catch((e) => logger.warn('Alto-falante:', e.message));
   return text;
 }
 
@@ -45,13 +43,13 @@ async function briefing() {
   const queue = jobs.list().filter((j) => ['queued', 'producing', 'awaiting_approval', 'publishing'].includes(j.status)).map((j) => `${j.profileName}: ${j.type} ${j.status}`);
   let text;
   try {
-    text = await llm.ask(
+    text = await llm.brain(
       'Você é a Nara, assistente pessoal de redes sociais. Fala em português do Brasil, simpática, objetiva, frases curtas, sem emojis e sem markdown, pois o texto será falado em voz alta.',
       `Agora são ${now.time} de ${now.date}. Faça o briefing falado (máx. 130 palavras): cumprimente, diga como foi ontem (posts e desempenho), ` +
         `quais perfis ganharam ou perderam seguidores, problemas que precisam de atenção, e a agenda de hoje.\n\n` +
         `DADOS:\n${JSON.stringify(data)}\n\nAGENDA DE HOJE:\n${scheduleText()}\n\nFILA AGORA:\n${queue.join('\n') || 'vazia'}\n` +
         (c.settings.paused ? '\nATENÇÃO: as postagens estão PAUSADAS.' : ''),
-      { temperature: 0.7, maxTokens: 600 }
+      { maxTokens: 700 }
     );
   } catch (e) {
     text = `Bom dia! Não consegui falar com a inteligência artificial agora (${e.message.slice(0, 80)}). Hoje temos ${scheduler.today().length} conteúdos agendados.`;
@@ -131,7 +129,7 @@ async function command(text) {
   const profiles = config.load().profiles.map((p) => ({ nome: p.name, instagram: p.instagram.username, nicho: p.niche, videosPorDia: p.videosPerDay, ativo: p.enabled }));
   let plan;
   try {
-    plan = await llm.askJSON(
+    plan = extractJSON(await llm.brain(
       'Você é a Nara, assistente que gerencia perfis de YouTube e Instagram. Interprete o pedido do dono e devolva ações. Responda em português do Brasil, frases curtas, sem emojis (será falado).',
       `PERFIS: ${JSON.stringify(profiles)}\nAGENDA HOJE:\n${scheduleText()}\nRESUMO: ${JSON.stringify(analytics.summary())}\n\n` +
         `PEDIDO: "${text}"\n\nAções possíveis (use o nome exato do perfil):\n` +
@@ -144,8 +142,8 @@ async function command(text) {
         '- {"type":"refresh_stats"}\n' +
         '- {"type":"briefing"}\n' +
         'Se for só uma pergunta, responda sem ações. JSON: {"actions":[...], "reply":"o que você vai falar para o dono"}',
-      { temperature: 0.3, maxTokens: 800 }
-    );
+      { json: true, maxTokens: 900 }
+    ));
   } catch (e) {
     return { reply: await speak('Desculpa, não consegui entender agora. ' + e.message.slice(0, 80)), actions: [] };
   }
@@ -163,35 +161,40 @@ async function command(text) {
   return { reply: await speak(reply), actions: plan.actions || [], results };
 }
 
-/** Áudio do Atom S3R → texto → comando (só reage se ouvir a palavra "Nara") */
+/** Áudio do Atom S3R → texto → comando (na escuta contínua só reage se ouvir "Nara") */
 async function voice(wav, { requireWake = true } = {}) {
-  const text = await llm.transcribe(wav);
+  let text;
+  try {
+    text = await voiceIO.transcribe(wav);
+  } catch (e) {
+    logger.warn('Transcrição:', e.message);
+    text = null;
+  }
+  if (text == null) {
+    // sem chave Groq: quando você aperta o botão, quem escuta é o microfone do celular
+    if (!requireWake) listenOnPhone();
+    return { heard: '', reply: '', phoneListening: !requireWake };
+  }
   logger.info('Ouvi:', text);
-  if (!text || /\[silencio\]/i.test(text)) return { heard: '', reply: '' };
+  if (!text || /^\W*$/.test(text)) return { heard: '', reply: '' };
   const wake = (config.load().settings.nara.wakeWord || 'nara').toLowerCase();
-  const norm = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const norm = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   if (requireWake && !norm.includes(wake)) return { heard: text, reply: '' };
   const r = await command(text);
   return { heard: text, ...r };
 }
 
-/** Usa o microfone do próprio celular (Termux:API) para ouvir um pedido */
+/** Usa o microfone do próprio celular (reconhecimento de voz do Android, grátis) */
 async function listenOnPhone() {
-  if (!(await commandExists('termux-speech-to-text'))) return null;
-  try {
-    const out = await run('termux-speech-to-text', []);
-    const text = out.trim().split('\n').pop();
-    return text ? command(text) : null;
-  } catch (e) {
-    logger.warn('Microfone do celular:', e.message);
-    return null;
-  }
+  await speaking;
+  const text = await voiceIO.listenOnPhone();
+  return text ? command(text) : null;
 }
 
 async function wake() {
   const reply = await briefing();
   if (config.load().settings.nara.listenOnPhoneAfterWake) {
-    speaking.then(() => listenOnPhone());
+    speaking.then(() => listenOnPhone()).catch(() => {});
   }
   return { reply };
 }

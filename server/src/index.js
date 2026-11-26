@@ -9,6 +9,7 @@ const scheduler = require('./scheduler');
 const analytics = require('./analytics');
 const nara = require('./nara');
 const llm = require('./ai/llm');
+const voice = require('./ai/voice');
 const youtube = require('./publish/youtube');
 const instagram = require('./publish/instagram');
 const { DATA_DIR, WEB_DIR, logger, nowInTz, uid } = require('./util');
@@ -233,14 +234,20 @@ async function route(req, res) {
   if (m === 'POST' && p === '/api/test/keys') {
     const out = {};
     const s = config.load().settings;
-    if (s.deepseekKey) {
-      try { await llm.deepseekChat([{ role: 'user', content: 'Responda só: ok' }], { maxTokens: 5 }); out.deepseek = 'ok ✅'; } catch (e) { out.deepseek = '❌ ' + e.message.slice(0, 150); }
-    } else out.deepseek = 'não configurada';
-    if (s.googleKey) {
-      try { await llm.geminiGenerate([{ text: 'Responda só: ok' }]); out.gemini = 'ok ✅'; } catch (e) { out.gemini = '❌ ' + e.message.slice(0, 150); }
-      try { await llm.tts('Olá, eu sou a Nara.', 'Kore'); out.voz = 'ok ✅'; } catch (e) { out.voz = '❌ ' + e.message.slice(0, 150); }
-    } else out.gemini = 'não configurada';
+    const t = async (name, ok, fn) => {
+      if (!ok) return (out[name] = 'não configurada');
+      try { await fn(); out[name] = 'ok ✅'; } catch (e) { out[name] = '❌ ' + (llm.claudeErrorMessage(e) || e.message).slice(0, 160); }
+    };
+    await t('DeepSeek (cérebro)', s.deepseekKey, () => llm.deepseekChat([{ role: 'user', content: 'Responda só: ok' }], { maxTokens: 5 }));
+    await t('Claude (motor)', s.anthropicKey, () => llm.claudeAsk('Responda curto.', 'Responda só: ok', { maxTokens: 2000 }));
+    await t('Google (narração)', s.googleKey, () => llm.tts('Olá, teste de narração.', 'Kore'));
+    await t('Voz da Nara (grátis)', true, async () => { if (!(await voice.synth('Olá, eu sou a Nara.'))) throw new Error('sem voz — rode de novo o instalador'); });
+    await t('Groq (ouvir o Atom)', s.groqKey, async () => { const r = await voice.transcribe(llm.pcmToWav(Buffer.alloc(32000))); if (r == null) throw new Error('sem chave'); });
     return send(res, 200, out);
+  }
+  if (m === 'POST' && p === '/api/nara/test-voice') {
+    await nara.speak('Oi! Eu sou a Nara. Estou pronta para trabalhar.');
+    return send(res, 200, { ok: true });
   }
   if (m === 'GET' && p === '/api/schedule/preview') {
     const prof = config.getProfile(url.searchParams.get('profileId'));

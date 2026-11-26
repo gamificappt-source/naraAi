@@ -1,5 +1,5 @@
 // Gera roteiros de vídeo e textos de carrossel com base no perfil
-const { askJSON } = require('./llm');
+const { engineJSON: askJSON } = require('./llm');
 
 const STYLE_LABEL = {
   '2d': '2D ilustrado (flat / cartoon)',

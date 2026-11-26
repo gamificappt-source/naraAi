@@ -33,19 +33,19 @@ async function searchPexels(q, orientation) {
   return (d.photos || []).map((p) => p.src.large2x || p.src.large);
 }
 
-function pollinationsUrl(prompt, w, h) {
+function pollinationsUrl(prompt, w, h, model = 'flux') {
   const seed = Math.floor(Math.random() * 1e9);
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 900))}?width=${w}&height=${h}&nologo=true&seed=${seed}&model=flux`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 900))}?width=${w}&height=${h}&nologo=true&seed=${seed}${model ? '&model=' + model : ''}`;
 }
 
-async function download(url, dest) {
+async function download(url, dest, { cropBottom = false } = {}) {
   const res = await fetchRetry(url, { headers: UA }, { tries: 2, timeoutMs: 90000 });
   if (!res.ok) throw new Error(`download ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length < 8000) throw new Error('imagem muito pequena');
   fs.writeFileSync(dest + '.src', buf);
   // normaliza para JPG (valida que é imagem de verdade)
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', dest + '.src', '-frames:v', '1', '-q:v', '3', dest]);
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', dest + '.src', ...(cropBottom ? ['-vf', 'crop=iw:ih*0.94:0:0'] : []), '-frames:v', '1', '-q:v', '3', dest]);
   fs.unlinkSync(dest + '.src');
   return dest;
 }
@@ -66,8 +66,10 @@ async function getImage({ search, visual, styleHint, source, orientation, dest, 
       searchOpenverse(search).catch(() => []),
       searchWikimedia(search).catch(() => []),
     ]);
-    const urls = lists.flat().filter((u) => !usedUrls.has(u));
-    for (const u of urls.slice(0, 6)) {
+    // intercala as fontes (Pexels, Openverse, Wikimedia) para não depender de uma só
+    const urls = [];
+    for (let i = 0; i < 10; i++) for (const l of lists) if (l[i] && !usedUrls.has(l[i])) urls.push(l[i]);
+    for (const u of urls.slice(0, 9)) {
       try {
         await download(u, dest);
         usedUrls.add(u);
@@ -79,12 +81,14 @@ async function getImage({ search, visual, styleHint, source, orientation, dest, 
   };
   const tryAi = async () => {
     const prompt = [visual || search, styleHint, 'no text, no watermark, high detail'].filter(Boolean).join(', ');
-    try {
-      return await download(pollinationsUrl(prompt, w, h), dest);
-    } catch (e) {
-      logger.warn('Imagem por IA falhou:', e.message);
-      return null;
+    for (const model of ['flux', '']) {
+      try {
+        return await download(pollinationsUrl(prompt, w, h, model), dest, { cropBottom: true }); // tira a marca d'água
+      } catch (e) {
+        logger.warn('Imagem por IA falhou:', e.message);
+      }
     }
+    return null;
   };
   const order = source === 'web' ? [tryWeb, tryAi] : useAiFirst ? [tryAi, tryWeb] : [tryWeb, tryAi];
   for (const fn of order) {

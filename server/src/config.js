@@ -9,11 +9,14 @@ const DEFAULT_SETTINGS = {
   adminToken: '', // senha da página (gerada no 1º start)
   deviceToken: '', // senha do Atom S3R
   timezone: 'America/Sao_Paulo',
-  deepseekKey: '',
+  deepseekKey: '', // CÉREBRO: conversa da Nara
   deepseekModel: 'deepseek-chat',
-  googleKey: '',
-  geminiTextModel: 'gemini-2.5-flash',
+  anthropicKey: '', // MOTOR: roteiros, carrosséis, temas, análise de estilo
+  claudeModel: 'claude-opus-5-5',
+  claudeEffort: 'medium', // low | medium | high (mais alto = melhor e mais caro)
+  googleKey: '', // só para NARRAR os vídeos
   geminiTtsModel: 'gemini-2.5-flash-preview-tts',
+  groqKey: '', // opcional: entender a fala do Atom S3R (grátis)
   pexelsKey: '', // opcional: mais imagens/fotos grátis
   youtubeClientId: '',
   youtubeClientSecret: '',
@@ -21,11 +24,11 @@ const DEFAULT_SETTINGS = {
   paused: false, // pausa geral
   nara: {
     wakeWord: 'nara',
-    speakOnPhone: true, // fala pelo alto-falante do celular (termux-tts-speak)
+    voice: 'pt-BR-ThalitaMultilingualNeural', // voz grátis (Edge TTS)
+    speakOnPhone: true, // fala pelo alto-falante do celular
     speakOnDevice: false, // manda áudio para o Atom (se tiver alto-falante)
-    deviceVoice: 'Kore',
     briefingTime: '', // ex.: 07:30 → briefing automático (vazio = só quando pedir)
-    listenOnPhoneAfterWake: false, // depois do "bom dia" escuta comando pelo microfone do celular
+    listenOnPhoneAfterWake: true, // depois do "bom dia" escuta comando pelo microfone do celular
   },
   render: {
     quality: '1080', // 1080 ou 720
@@ -120,7 +123,7 @@ function deepMerge(base, extra) {
   return base;
 }
 
-const SECRET_FIELDS = ['deepseekKey', 'googleKey', 'pexelsKey', 'youtubeClientSecret'];
+const SECRET_FIELDS = ['deepseekKey', 'anthropicKey', 'groqKey', 'googleKey', 'pexelsKey', 'youtubeClientSecret'];
 function mask(v) {
   if (!v) return '';
   return v.length <= 8 ? '••••' : v.slice(0, 4) + '••••' + v.slice(-4);

@@ -2,11 +2,21 @@
 
 A Nara roda **24 horas no Termux** do seu Samsung S23 Ultra e faz o mesmo fluxo que você faz hoje à mão — só que sozinha:
 
+**Quem faz o quê:**
+
+| Papel | Quem | Para quê |
+|---|---|---|
+| 🧠 **Cérebro** | DeepSeek | Conversar com você: briefing "Nara, bom dia", entender seus pedidos |
+| ⚙️ **Motor** | Claude | Pesquisar temas, escrever roteiros e carrosséis, entender sua imagem de referência |
+| 🎙️ **Narração** | Google AI Studio (grátis) | Só a voz que narra os vídeos |
+| 🗣️ **Voz da Nara** | Edge TTS (grátis, sem chave) | A voz dela falando com você |
+| 👂 **Ouvido** (opcional) | Groq (grátis) ou o microfone do celular | Entender o que você fala para o Atom |
+
 ```
- Tema (sua fila ou pesquisado pela IA)
+ Tema (sua fila ou pesquisado pela Claude)
         │
         ▼
- DeepSeek escreve o roteiro  ──►  Google (AI Studio) gera a narração
+ Claude escreve o roteiro  ──►  Google (AI Studio) gera a narração
         │                                   │
         ▼                                   ▼
  Busca imagens na internet / gera por IA no estilo da sua referência
@@ -51,12 +61,14 @@ A Nara roda **24 horas no Termux** do seu Samsung S23 Ultra e faz o mesmo fluxo 
 | **Termux** | F-Droid (NÃO use o da Play Store, está desatualizado) | grátis |
 | **Termux:API** | F-Droid | grátis |
 | **Termux:Boot** | F-Droid | grátis |
-| **Chave DeepSeek** | https://platform.deepseek.com → API keys | pago por uso (centavos) |
-| **Chave Google AI Studio** | https://aistudio.google.com → *Get API key* | grátis (com limites) |
+| **Chave DeepSeek** (cérebro) | https://platform.deepseek.com → API keys | pago por uso (centavos) |
+| **Chave Claude** (motor) | https://platform.claude.com → API keys (coloque créditos em *Billing*) | pago por uso |
+| **Chave Google AI Studio** (narração) | https://aistudio.google.com → *Get API key* | grátis (com limites) |
+| **Chave Groq** (opcional, ouvir o Atom) | https://console.groq.com → API Keys | grátis |
 | **Google Cloud (YouTube)** | https://console.cloud.google.com | grátis |
 | **Meta for Developers (Instagram)** | https://developers.facebook.com | grátis |
 | **Tailscale** (acessar do PC) | Play Store + PC | grátis |
-| VS Code + PlatformIO (Atom S3R) | no seu computador | grátis |
+| Navegador Chrome ou Edge no computador (gravar o Atom S3R) | no seu computador | grátis |
 
 > Baixe o F-Droid em https://f-droid.org, instale, e dentro dele procure **Termux**, **Termux:API** e **Termux:Boot**.
 
@@ -124,10 +136,15 @@ A Nara **reinicia sozinha** se travar, e **liga sozinha** quando o celular reini
 1. No modo DeX, abra o navegador e entre em **http://localhost:8080**
 2. Digite a senha.
 3. Aba **Chaves e ajustes**:
-   - **DeepSeek API key** → cole a chave (`sk-...`).
-   - **Google AI Studio API key** → cole a chave (`AIza...`). É ela que gera a **narração** (mesma voz do AI Studio que você já usa), analisa sua imagem de referência e serve de reserva se o DeepSeek falhar.
+   - **DeepSeek** (cérebro) → cole a chave (`sk-...`).
+   - **Claude** (motor) → cole a chave (`sk-ant-...`).
+   - **Google AI Studio** (narração) → cole a chave (`AIza...`). É usada **só** para narrar os vídeos (a mesma voz do AI Studio que você já usa).
+   - (Opcional) **Groq** → para a Nara entender o que você fala direto no Atom S3R.
    - (Opcional) **Pexels** → https://www.pexels.com/api — mais fotos grátis e bonitas.
-   - Clique **Salvar** e depois **Testar chaves**. Tem que aparecer `ok ✅`.
+   - Clique **Salvar** e depois **Testar chaves**. Tem que aparecer `ok ✅` em cada uma.
+4. Em **Nara (voz e Atom S3R)** escolha a voz (Thalita, Francisca ou Antônio) e clique **🔊 Ouvir a voz da Nara** — ela fala pelo alto-falante do celular (ou pela caixa de som Bluetooth / monitor HDMI conectado).
+
+> 💰 **Custo da Claude:** cada roteiro custa poucos centavos de dólar. Em **Chaves e ajustes → Geral → Capricho da Claude** você escolhe *Rápido/barato*, *Equilibrado* (padrão) ou *Caprichado*. Se um dia a Claude recusar um tema sensível, a própria API tenta automaticamente outro modelo Claude; se mesmo assim falhar, o DeepSeek escreve o roteiro.
 
 ---
 
@@ -225,27 +242,37 @@ Em casa, na mesma rede Wi‑Fi, também funciona pelo IP local (ex.: `http://192
 - O **AtomS3R‑CAM sozinho não tem microfone nem alto‑falante**. Ele funciona como **botão**: clicou → a Nara dá o briefing pelo **alto‑falante do celular**.
 - Se você tem o kit **AtomS3R‑CAM AI Chatbot** (ou encaixou a **Atomic Echo Base / Voice Base**), ele tem microfone e alto‑falante: você fala "**Nara, bom dia**" ou "**Nara, posta um vídeo extra hoje**" e ela responde.
 
-### Gravar o firmware (no seu computador)
-1. Instale o **VS Code** (https://code.visualstudio.com) e, dentro dele, a extensão **PlatformIO IDE**.
-2. Baixe este projeto no computador (no GitHub: **Code → Download ZIP**) e no VS Code: **File → Open Folder → `firmware/nara-atom`**.
-3. Na pasta `src`, copie `config.example.h` para **`config.h`** e preencha:
-   - `WIFI_SSID` / `WIFI_PASSWORD` — seu Wi‑Fi (2,4 GHz).
-   - `NARA_SERVER` — endereço do celular na rede (aba **Sistema** da página), ex.: `http://192.168.0.15:8080`.
-     💡 Dica: no roteador, reserve um IP fixo para o celular, assim o endereço nunca muda.
-   - `NARA_TOKEN` — o **Token do Atom S3R** (página → Chaves e ajustes).
-   - `HAS_VOICE_BASE` — `true` se tem a base de voz, `false` se é só o Atom.
-   - `ALWAYS_LISTEN` — `true` para escuta contínua ("Nara, …" sem apertar botão).
-4. Ligue o Atom no USB‑C do computador e clique na **setinha →** (Upload) na barra de baixo do VS Code.
-   Se não reconhecer, segure o botão lateral do Atom por 3 segundos ao conectar o cabo (modo download).
+### Gravar o programa no Atom (pelo navegador, sem instalar nada)
+O programa já está pronto e compilado: **`firmware/dist/nara-atoms3r-completo.bin`**.
+
+1. No GitHub, abra esse arquivo e clique em **Download** (baixe para o computador).
+2. Ligue o Atom no computador com cabo USB‑C. **Segure o botão do Atom por ~3 segundos** enquanto conecta o cabo (modo de gravação).
+3. No **Chrome ou Edge** do computador, abra **https://espressif.github.io/esptool-js/**
+4. Clique **Connect** → escolha a porta (algo como "USB JTAG/serial" ou "COM3") → Conectar.
+5. Em **Flash Address** deixe **0x0**, clique em **Escolher arquivo** e selecione `nara-atoms3r-completo.bin`.
+6. Clique **Program** e espere chegar a 100%. Desconecte e conecte o cabo de novo (ou ligue numa tomada USB).
+
+### Configurar o Atom (pelo celular)
+1. Na primeira vez, o Atom cria uma rede Wi‑Fi chamada **Nara-Setup**. Conecte o celular (ou PC) nela.
+2. Abre sozinha uma página (se não abrir, acesse **http://192.168.4.1**). Preencha:
+   - Wi‑Fi e senha da sua casa (**2,4 GHz**);
+   - **Endereço da Nara** — aparece na aba **Sistema** da página, ex.: `http://192.168.0.15:8080`
+     💡 No roteador, reserve um IP fixo para o celular, assim o endereço nunca muda;
+   - **Token do Atom S3R** — página → Chaves e ajustes;
+   - marque se tem a **base de voz** e se quer **escuta contínua**.
+3. **Salvar e reiniciar**. Pronto.
+4. Para mudar depois: **segure o botão enquanto liga o Atom** → ele volta a criar a rede Nara-Setup.
+
+> (Para quem quiser mexer no código: `firmware/nara-atom` é um projeto PlatformIO — `pio run -t upload`.)
 
 ### Como usar
 | Ação | O que acontece |
 |---|---|
 | **Segurar o botão 1s** | Briefing do dia |
-| **Clicar o botão** | Com base de voz: ouve seu pedido (fale logo após clicar). Sem base: briefing |
-| **Falar "Nara, …"** (escuta contínua) | Ela ouve e responde |
+| **Clicar o botão** | Com base de voz + chave Groq: o Atom ouve seu pedido. Sem Groq: quem escuta é o **microfone do celular** (fale depois do bip do Android). Sem base de voz: briefing |
+| **Falar "Nara, …"** (escuta contínua, precisa da chave Groq) | Ela ouve e responde |
 
-Na página, **Chaves e ajustes → Nara**, você escolhe se a voz sai **pelo celular**, **pelo Atom** (base de voz) ou os dois, e pode marcar um **briefing automático** todo dia num horário.
+Na página, **Chaves e ajustes → Nara**, você escolhe se a voz sai **pelo celular**, **pelo Atom** (base de voz) ou os dois, e pode marcar um **briefing automático** todo dia num horário. A voz da Nara é **grátis e ilimitada** (Edge TTS) — não gasta a cota do Google.
 
 ---
 
@@ -268,9 +295,10 @@ Pela voz ou digitando no Painel:
 
 ## 11. Limites da versão grátis e dicas
 
-- **Google AI Studio grátis**: a narração (TTS) tem um **limite diário pequeno** de pedidos. Veja seus limites em https://aistudio.google.com → *Rate limits*. Se estourar, a produção falha com erro 429 e você pode clicar **Tentar de novo** depois. Com muitos perfis/vídeos por dia, considere ativar o faturamento no AI Studio.
-- Se usar a voz no Atom (`Mandar a voz para o Atom`), cada resposta também gasta a cota de voz. A voz pelo **celular** é grátis e ilimitada.
-- A **escuta contínua** do Atom manda áudio para o Google cada vez que ouve barulho — em lugar barulhento gasta cota. Aumente `VOICE_THRESHOLD` ou use só o botão.
+- **Google AI Studio grátis**: usado **só para narrar os vídeos**. A narração tem um **limite diário pequeno** de pedidos. Veja seus limites em https://aistudio.google.com → *Rate limits*. Se estourar, a produção falha com erro 429 e você pode clicar **Tentar de novo** depois. Com muitos perfis/vídeos por dia, considere ativar o faturamento no AI Studio.
+- A **voz da Nara** (Edge TTS) e o **microfone do celular** são grátis e não têm cota.
+- A **escuta contínua** do Atom usa a Groq a cada barulho — em lugar barulhento gasta a cota grátis da Groq. Aumente a sensibilidade ou use só o botão.
+- **Claude** cobra por uso (poucos centavos por roteiro). Acompanhe em platform.claude.com → Usage.
 - **DeepSeek** cobra por uso, mas um roteiro custa menos de 1 centavo.
 - **Imagens**: as fotos vêm do Openverse, Wikimedia Commons e Pexels (licenças livres). As imagens por IA vêm do Pollinations (grátis). Para conteúdo sobre pessoas e casos reais, prefira "Só internet" ou "Misto".
 - O celular apaga sozinho os arquivos de vídeos postados há mais de 5 dias.
@@ -290,7 +318,8 @@ Pela voz ou digitando no Painel:
 | Vídeo no YouTube ficou privado | Veja o aviso de auditoria no passo 6. |
 | Instagram "Media download has failed" | Tente de novo; se repetir, gere um novo token. |
 | Legenda com fonte errada | Rode de novo `bash install/termux-setup.sh` para baixar as fontes. |
-| Atom não conecta | Confira Wi‑Fi 2,4 GHz, o `NARA_SERVER` (IP do celular) e o token. Abra o Monitor Serial no PlatformIO para ver mensagens. |
+| Atom não conecta | Segure o botão ao ligar para abrir a rede Nara-Setup e confira Wi‑Fi 2,4 GHz, o endereço (IP do celular) e o token. |
+| Nara não fala | Teste em Chaves e ajustes → 🔊 Ouvir a voz da Nara. Se não sair som, confira se o **Termux:API** está instalado e rode de novo `bash install/termux-setup.sh`. |
 
 ---
 
@@ -301,14 +330,16 @@ server/            → o "cérebro" que roda no Termux (Node.js, sem dependênci
   src/index.js       servidor web + API da página + rotas do Atom
   src/scheduler.js   agenda do dia
   src/jobs.js        fila de produção (roteiro → voz → imagens → vídeo → postagem)
-  src/ai/            DeepSeek e Google (texto, voz, visão, transcrição)
+  src/ai/llm.js      DeepSeek (cérebro), Claude (motor), Google (narração)
+  src/ai/voice.js    voz grátis da Nara e transcrição
   src/media/         busca de imagens e montagem com ffmpeg
   src/publish/       YouTube e Instagram
   src/analytics.js   seguidores e visualizações
   src/nara.js        briefing e pedidos falados
   data/              (criada sozinha) configurações, vídeos, estatísticas — NÃO apague
 web/index.html     → a página de configuração
-firmware/nara-atom → programa do Atom S3R
+firmware/nara-atom → código do Atom S3R
+firmware/dist      → programa pronto para gravar pelo navegador
 install/           → instalação no Termux
 ```
 

@@ -4,13 +4,52 @@
 //    ou dá o briefing do dia (sem base de voz).
 //  - Segure o botão 1s: briefing do dia ("Nara, bom dia").
 //  - Escuta contínua (opcional): fale "Nara, bom dia" / "Nara, posta um vídeo extra…"
+//  - Primeira vez (ou botão apertado ao ligar): cria a rede Wi-Fi "Nara-Setup"
+//    para você digitar Wi-Fi, endereço da Nara e token pelo celular.
 //  A voz da resposta sai pelo celular e/ou pelo alto-falante da base.
 // =============================================================
 #include <M5Unified.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
+#include <WebServer.h>
+#include <DNSServer.h>
+#if __has_include("config.h")
 #include "config.h"
+#endif
+#ifndef WIFI_SSID
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+#define NARA_SERVER ""
+#define NARA_TOKEN ""
+#endif
+#ifndef HAS_VOICE_BASE
+#define HAS_VOICE_BASE true
+#endif
+#ifndef ALWAYS_LISTEN
+#define ALWAYS_LISTEN false
+#endif
+#ifndef VOICE_THRESHOLD
+#define VOICE_THRESHOLD 1800
+#endif
+
+// Configuração salva no Atom (preenchida pela rede "Nara-Setup")
+struct Cfg { String ssid, pass, server, token; bool voiceBase, listen; int threshold; } cfg;
+Preferences prefs;
+
+void loadCfg() {
+  prefs.begin("nara", true);
+  cfg.ssid = prefs.getString("ssid", WIFI_SSID);
+  cfg.pass = prefs.getString("pass", WIFI_PASSWORD);
+  cfg.server = prefs.getString("server", NARA_SERVER);
+  cfg.token = prefs.getString("token", NARA_TOKEN);
+  cfg.voiceBase = prefs.getBool("voice", HAS_VOICE_BASE);
+  cfg.listen = prefs.getBool("listen", ALWAYS_LISTEN);
+  cfg.threshold = prefs.getInt("thr", VOICE_THRESHOLD);
+  prefs.end();
+  while (cfg.server.endsWith("/")) cfg.server.remove(cfg.server.length() - 1);
+}
 
 static const uint32_t MIC_RATE = 16000;
 static const size_t CHUNK = 1600;            // 100 ms
@@ -37,7 +76,7 @@ void connectWiFi() {
   showStatus("WiFi...", TFT_YELLOW);
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(cfg.ssid.c_str(), cfg.pass.c_str());
   for (int i = 0; i < 60 && WiFi.status() != WL_CONNECTED; i++) delay(500);
   showStatus(WiFi.status() == WL_CONNECTED ? "pronta" : "sem WiFi", WiFi.status() == WL_CONNECTED ? TFT_GREEN : TFT_RED);
 }
@@ -74,16 +113,16 @@ void recordUtterance(size_t startOffset, float seconds) {
     while (M5.Mic.isRecording()) delay(1);
     int lv = level(recBuf + recLen, CHUNK);
     recLen += CHUNK;
-    quiet = lv < VOICE_THRESHOLD / 3 ? quiet + 1 : 0;
+    quiet = lv < cfg.threshold / 3 ? quiet + 1 : 0;
     if (quiet > 12 && recLen > MIC_RATE * 1.5) break;
   }
 }
 
 void playReplyAudio() {
-  if (!HAS_VOICE_BASE) return;
+  if (!cfg.voiceBase) return;
   HTTPClient http;
-  http.begin(String(NARA_SERVER) + "/api/device/audio");
-  http.addHeader("x-nara-token", NARA_TOKEN);
+  http.begin(cfg.server + "/api/device/audio");
+  http.addHeader("x-nara-token", cfg.token);
   http.setTimeout(30000);
   int code = http.GET();
   if (code == 200) {
@@ -131,9 +170,9 @@ void sendVoice(bool requireWake) {
   writeWavHeader(wav, bytes);
   memcpy(wav + 44, recBuf, bytes);
   HTTPClient http;
-  http.begin(String(NARA_SERVER) + "/api/device/voice?wake=" + (requireWake ? "1" : "0"));
+  http.begin(cfg.server + "/api/device/voice?wake=" + (requireWake ? "1" : "0"));
   http.addHeader("Content-Type", "audio/wav");
-  http.addHeader("x-nara-token", NARA_TOKEN);
+  http.addHeader("x-nara-token", cfg.token);
   http.setTimeout(90000);
   int code = http.POST(wav, 44 + bytes);
   free(wav);
@@ -148,8 +187,8 @@ void wakeBriefing() {
   connectWiFi();
   showStatus("bom dia!", TFT_ORANGE);
   HTTPClient http;
-  http.begin(String(NARA_SERVER) + "/api/device/wake");
-  http.addHeader("x-nara-token", NARA_TOKEN);
+  http.begin(cfg.server + "/api/device/wake");
+  http.addHeader("x-nara-token", cfg.token);
   http.setTimeout(90000);
   int code = http.POST("");
   String body = code > 0 ? http.getString() : "";
@@ -159,20 +198,74 @@ void wakeBriefing() {
   showStatus("pronta", TFT_GREEN);
 }
 
+// ---------- modo configuração (rede Wi-Fi "Nara-Setup") ----------
+String esc(const String &v) { String o = v; o.replace("\"", "&quot;"); o.replace("<", "&lt;"); return o; }
+
+void runSetupPortal() {
+  WebServer web(80);
+  DNSServer dns;
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("Nara-Setup");
+  dns.start(53, "*", WiFi.softAPIP());
+  showStatus("Nara-Setup", TFT_MAGENTA);
+  Serial.println("Modo configuracao: conecte na rede Wi-Fi 'Nara-Setup' e abra http://192.168.4.1");
+  auto page = [&]() {
+    String h = F("<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+      "<title>Nara Setup</title><style>body{font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:16px;max-width:460px;margin:auto}"
+      "input{width:100%;padding:10px;margin:4px 0 12px;border-radius:8px;border:1px solid #2a3240;background:#161b22;color:#e6edf3;box-sizing:border-box}"
+      "button{background:#7ee0c3;border:0;padding:12px;border-radius:8px;width:100%;font-weight:bold}label{font-size:14px;color:#8b98a9}</style>"
+      "<h2>Configurar a Nara</h2><form method=post action=/save>");
+    h += "<label>Nome do Wi-Fi (2,4 GHz)</label><input name=ssid value=\"" + esc(cfg.ssid) + "\">";
+    h += "<label>Senha do Wi-Fi</label><input name=pass type=password value=\"" + esc(cfg.pass) + "\">";
+    h += "<label>Endereço da Nara (aba Sistema da página). Ex.: http://192.168.0.15:8080</label><input name=server value=\"" + esc(cfg.server) + "\">";
+    h += "<label>Token do Atom S3R (página → Chaves e ajustes)</label><input name=token value=\"" + esc(cfg.token) + "\">";
+    h += String("<label><input type=checkbox name=voice style='width:auto' ") + (cfg.voiceBase ? "checked" : "") + "> Tenho a base de voz (microfone + alto-falante)</label><br><br>";
+    h += String("<label><input type=checkbox name=listen style='width:auto' ") + (cfg.listen ? "checked" : "") + "> Escuta contínua (\"Nara, ...\" sem apertar o botão — precisa da chave Groq)</label><br><br>";
+    h += "<label>Sensibilidade (maior = precisa falar mais alto)</label><input name=thr type=number value=" + String(cfg.threshold) + ">";
+    h += F("<button>Salvar e reiniciar</button></form>");
+    web.send(200, "text/html", h);
+  };
+  web.on("/", page);
+  web.onNotFound(page);
+  web.on("/save", HTTP_POST, [&]() {
+    prefs.begin("nara", false);
+    prefs.putString("ssid", web.arg("ssid"));
+    prefs.putString("pass", web.arg("pass"));
+    prefs.putString("server", web.arg("server"));
+    prefs.putString("token", web.arg("token"));
+    prefs.putBool("voice", web.hasArg("voice"));
+    prefs.putBool("listen", web.hasArg("listen"));
+    prefs.putInt("thr", web.arg("thr").toInt() > 0 ? web.arg("thr").toInt() : 1800);
+    prefs.end();
+    web.send(200, "text/html", "<meta charset=utf-8><body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'><h2>Salvo! ✅</h2><p>A Nara vai reiniciar e entrar no seu Wi-Fi.</p>");
+    delay(1500);
+    ESP.restart();
+  });
+  web.begin();
+  for (;;) { dns.processNextRequest(); web.handleClient(); M5.update(); delay(2); }
+}
+
 // ---------- programa ----------
 void setup() {
-  auto cfg = M5.config();
-#if HAS_VOICE_BASE
-  cfg.external_speaker.atomic_echo = true;  // base de voz (ES8311: microfone + alto-falante)
-#endif
-  M5.begin(cfg);
+  loadCfg();  // lê a configuração salva (não precisa do hardware iniciado)
+  auto mc = M5.config();
+  if (cfg.voiceBase) mc.external_speaker.atomic_echo = true;  // base de voz (ES8311: microfone + alto-falante)
+  M5.begin(mc);
   Serial.begin(115200);
+  delay(300);
   hasDisplay = M5.Display.width() > 0 && M5.Display.height() > 0;
   if (hasDisplay) M5.Display.setTextSize(1.5);
+
+  // Sem configuração, ou botão apertado ao ligar → modo configuração
+  M5.update();
+  if (cfg.ssid.isEmpty() || cfg.server.isEmpty() || M5.BtnA.isPressed()) runSetupPortal();
+
   recBuf = (int16_t *)ps_malloc(MAX_SECONDS * MIC_RATE * sizeof(int16_t));
-  micOk = HAS_VOICE_BASE && recBuf && M5.Mic.isEnabled();
+  micOk = cfg.voiceBase && recBuf && M5.Mic.isEnabled();
   micOn();
   connectWiFi();
+  // não conectou no Wi-Fi em 30s → abre o modo configuração para corrigir
+  if (WiFi.status() != WL_CONNECTED) runSetupPortal();
   Serial.printf("Nara pronta. Microfone: %s\n", micOk ? "sim" : "nao (modo botao)");
 }
 
@@ -194,16 +287,14 @@ void loop() {
     return;
   }
 
-#if ALWAYS_LISTEN
-  if (micOk) {
+  if (cfg.listen && micOk) {
     M5.Mic.record(recBuf, CHUNK, MIC_RATE);
     while (M5.Mic.isRecording()) delay(1);
-    if (level(recBuf, CHUNK) > VOICE_THRESHOLD) {
+    if (level(recBuf, CHUNK) > cfg.threshold) {
       showStatus("ouvindo", TFT_RED);
       recordUtterance(CHUNK, 5);
       sendVoice(true);  // só reage se ouvir a palavra "Nara"
     }
   }
-#endif
   delay(5);
 }

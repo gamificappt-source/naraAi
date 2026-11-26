@@ -234,7 +234,7 @@ code{background:var(--panel2);padding:1px 6px;border-radius:6px;font-size:13px}
       <label>Imagem de referência do estilo</label>
       <input type="file" id="refFile" accept="image/png,image/jpeg,image/webp">
       <div class="ref" id="refBox"></div>
-      <div class="hint">Envie uma imagem no estilo que você quer (ex.: um frame 2D de investigação). O Google analisa as cores e o traço e a Nara segue essa linha.</div>
+      <div class="hint">Envie uma imagem no estilo que você quer (ex.: um frame 2D de investigação). A Claude analisa as cores e o traço e a Nara segue essa linha.</div>
       <label>Estilo entendido pela IA</label><textarea data-k="styleAnalysis" placeholder="(preenchido sozinho depois de enviar a referência — pode editar)"></textarea>
       <label>Cores da marca (fundo, destaque, texto)</label>
       <div class="row"><input type="color" data-k="palette.0"><input type="color" data-k="palette.1"><input type="color" data-k="palette.2"></div>
@@ -291,10 +291,14 @@ code{background:var(--panel2);padding:1px 6px;border-radius:6px;font-size:13px}
   <div class="grid">
     <div class="card">
       <h2>🔑 Chaves de API</h2>
-      <label>DeepSeek API key (roteiros)</label><input data-s="deepseekKey" placeholder="sk-…">
-      <div class="hint">Pegue em platform.deepseek.com → API keys.</div>
-      <label>Google AI Studio API key (voz, análise de imagem e reserva de texto) — versão grátis</label><input data-s="googleKey" placeholder="AIza…">
-      <div class="hint">Pegue em aistudio.google.com → Get API key. A versão grátis tem limite diário de narrações.</div>
+      <label>🧠 DeepSeek API key — <b>cérebro</b> da Nara (conversa, briefing, seus pedidos)</label><input data-s="deepseekKey" placeholder="sk-…">
+      <div class="hint">platform.deepseek.com → API keys.</div>
+      <label>⚙️ Claude API key — <b>motor</b> (pesquisa temas, escreve roteiros e carrosséis, entende sua referência visual)</label><input data-s="anthropicKey" placeholder="sk-ant-…">
+      <div class="hint">platform.claude.com → API keys (precisa colocar créditos).</div>
+      <label>🎙️ Google AI Studio API key — <b>só para narrar os vídeos</b> (versão grátis)</label><input data-s="googleKey" placeholder="AIza…">
+      <div class="hint">aistudio.google.com → Get API key. A versão grátis tem limite diário de narrações.</div>
+      <label>👂 Groq API key (opcional, grátis) — para a Nara entender o que você fala no Atom S3R</label><input data-s="groqKey" placeholder="gsk_…">
+      <div class="hint">console.groq.com → API Keys. Sem ela, quando você aperta o botão do Atom, quem escuta é o microfone do celular.</div>
       <label>Pexels API key (opcional, mais fotos grátis)</label><input data-s="pexelsKey">
       <h3>YouTube (Google Cloud – OAuth)</h3>
       <label>Client ID</label><input data-s="youtubeClientId" placeholder="….apps.googleusercontent.com">
@@ -306,11 +310,16 @@ code{background:var(--panel2);padding:1px 6px;border-radius:6px;font-size:13px}
     <div class="card">
       <h2>🤖 Nara (voz e Atom S3R)</h2>
       <label>Palavra de ativação</label><input data-s="nara.wakeWord">
-      <label class="check"><input type="checkbox" data-s="nara.speakOnPhone">Falar pelo alto-falante do celular</label>
-      <label class="check"><input type="checkbox" data-s="nara.speakOnDevice">Mandar a voz para o Atom S3R (se tiver alto-falante)</label>
-      <label class="check"><input type="checkbox" data-s="nara.listenOnPhoneAfterWake">Depois do briefing, ouvir pedido pelo microfone do celular</label>
+      <label>Voz da Nara (grátis)</label><select data-s="nara.voice">
+        <option value="pt-BR-ThalitaMultilingualNeural">Thalita (feminina, natural)</option>
+        <option value="pt-BR-FranciscaNeural">Francisca (feminina)</option>
+        <option value="pt-BR-AntonioNeural">Antônio (masculina)</option></select>
+      <label class="check"><input type="checkbox" data-s="nara.speakOnPhone">Falar pelo alto-falante do celular (ou caixa de som Bluetooth)</label>
+      <label class="check"><input type="checkbox" data-s="nara.speakOnDevice">Mandar a voz para o Atom S3R (se tiver a base com alto-falante)</label>
+      <label class="check"><input type="checkbox" data-s="nara.listenOnPhoneAfterWake">Depois do briefing, ouvir meu pedido pelo microfone do celular</label>
       <label>Briefing automático todo dia às (vazio = só quando chamar)</label><input type="time" data-s="nara.briefingTime">
-      <label>Token do Atom S3R (copie para o firmware)</label><input id="devTok" readonly>
+      <div class="actions"><button class="btn sec sm" id="btnVoice">🔊 Ouvir a voz da Nara</button></div>
+      <label>Token do Atom S3R (cole na tela "Nara-Setup" do Atom)</label><input id="devTok" readonly>
       <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button></div>
     </div>
     <div class="card">
@@ -322,8 +331,9 @@ code{background:var(--panel2);padding:1px 6px;border-radius:6px;font-size:13px}
       </div>
       <div class="row">
         <div><label>Modelo DeepSeek</label><input data-s="deepseekModel"></div>
-        <div><label>Modelo Gemini (texto)</label><input data-s="geminiTextModel"></div>
-        <div><label>Modelo Gemini (voz)</label><input data-s="geminiTtsModel"></div>
+        <div><label>Modelo Claude</label><input data-s="claudeModel"></div>
+        <div><label>Capricho da Claude</label><select data-s="claudeEffort"><option value="low">Rápido/barato</option><option value="medium">Equilibrado</option><option value="high">Caprichado (mais caro)</option></select></div>
+        <div><label>Modelo Google (narração)</label><input data-s="geminiTtsModel"></div>
       </div>
       <label>Nova senha da página (deixe vazio para manter)</label><input id="newPwd" type="text">
       <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button><button class="btn sec" id="btnLogout">Sair</button></div>
@@ -344,7 +354,7 @@ code{background:var(--panel2);padding:1px 6px;border-radius:6px;font-size:13px}
   <div class="card">
     <h2>📘 Resumo rápido</h2>
     <ol class="steps">
-      <li><b>Chaves e ajustes:</b> cole a chave do DeepSeek e a do Google AI Studio → Salvar → Testar chaves.</li>
+      <li><b>Chaves e ajustes:</b> cole as chaves do DeepSeek (cérebro), da Claude (motor) e do Google AI Studio (narração) → Salvar → Testar chaves.</li>
       <li><b>Perfis:</b> crie um perfil por conta, escolha quantos vídeos/carrosséis por dia, o estilo, envie a imagem de referência e cole o seu prompt.</li>
       <li><b>YouTube:</b> cole Client ID/Secret em Chaves → no perfil, clique “Conectar canal”, escolha o canal certo.</li>
       <li><b>Instagram:</b> cole o ID da conta e o token no perfil → Testar conexão.</li>
@@ -611,6 +621,7 @@ $$('[data-save-settings]').forEach((b) => (b.onclick = async () => {
     dirty = false; toast('✅ Salvo'); refresh();
   } catch (e) { toast('❌ ' + e.message); }
 }));
+$('#btnVoice').onclick = async () => { try { await api('/api/nara/test-voice', { method: 'POST' }); toast('🔊 Tocando no celular…'); } catch (e) { toast('❌ ' + e.message); } };
 $('#btnTestKeys').onclick = async () => {
   $('#keysOut').textContent = 'Testando…';
   try { const r = await api('/api/test/keys', { method: 'POST' }); $('#keysOut').innerHTML = Object.entries(r).map(([k, v]) => `<b>${k}</b>: ${esc(v)}`).join('<br>'); } catch (e) { $('#keysOut').textContent = '❌ ' + e.message; }

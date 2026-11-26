@@ -9,7 +9,15 @@ echo "==> Pasta do projeto: $DIR"
 
 echo "==> Atualizando o Termux e instalando programas (pode demorar ~5 min)…"
 yes | pkg update -y || true
-pkg install -y nodejs-lts ffmpeg git curl termux-api termux-tools
+pkg install -y nodejs-lts ffmpeg git curl termux-api termux-tools python
+
+echo "==> Instalando o SDK da Claude (motor)…"
+(cd "$DIR/server" && npm install --omit=dev --no-audit --no-fund)
+
+echo "==> Instalando a voz grátis da Nara (Edge TTS)…"
+# instala em modo "puro Python" (não precisa compilar nada no celular)
+export AIOHTTP_NO_EXTENSIONS=1 MULTIDICT_NO_EXTENSIONS=1 YARL_NO_EXTENSIONS=1 FROZENLIST_NO_EXTENSIONS=1 PROPCACHE_NO_EXTENSIONS=1
+pip install --upgrade edge-tts || echo "   (não consegui instalar a voz Edge — a Nara usa a voz reserva)"
 
 echo "==> Baixando fontes das legendas…"
 FONTS="$DIR/server/data/fonts"
