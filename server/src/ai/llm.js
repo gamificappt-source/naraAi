@@ -4,6 +4,9 @@
 //   NARRAÇÃO dos vídeos                             → Google AI Studio (Gemini TTS)
 //   Voz da própria Nara                             → ai/voice.js (grátis)
 const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { spawn } = require('child_process');
 const sdk = require('@anthropic-ai/sdk');
 const config = require('../config');
 const { fetchRetry, extractJSON, logger } = require('../util');
@@ -40,10 +43,99 @@ async function deepseekChat(messages, { json = false, maxTokens = 4000 } = {}) {
   return data.choices[0].message.content;
 }
 
-// ---------------- Claude ----------------
+// ---------------- Claude local (assinatura Pro/Max pelo Claude Code, sem chave de API) ----------------
+// Usado quando não há chave da Anthropic. Precisa do Claude Code logado uma vez:  claude auth login
+let cliCache = { at: 0, path: null };
+function newestFile(paths) {
+  return paths.filter((p) => fs.existsSync(p)).sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0] || null;
+}
+function claudeLocalPath() {
+  const s = config.load().settings;
+  if (s.claudeLocal === false) return null;
+  if (s.claudeCliPath && fs.existsSync(s.claudeCliPath)) return s.claudeCliPath;
+  if (Date.now() - cliCache.at < 10 * 60 * 1000) return cliCache.path;
+  const home = os.homedir();
+  const found = [];
+  if (process.platform === 'win32') {
+    found.push(path.join(home, '.local', 'bin', 'claude.exe'));
+    // binário que vem dentro do app Claude (atualiza sozinho, por isso pega o mais novo)
+    const base = path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), 'Claude-Data');
+    const ls = (d) => { try { return fs.readdirSync(d).map((x) => path.join(d, x)); } catch (_) { return []; } };
+    for (const acc of ls(base)) for (const ver of ls(path.join(acc, 'claude-code'))) for (const h of ls(ver)) found.push(path.join(h, 'claude.exe'));
+  } else {
+    found.push(path.join(home, '.local', 'bin', 'claude'), '/usr/local/bin/claude', '/opt/homebrew/bin/claude');
+  }
+  cliCache = { at: Date.now(), path: newestFile(found) };
+  return cliCache.path;
+}
+
+async function claudeLocalAsk(system, content) {
+  const exe = claudeLocalPath();
+  if (!exe) throw new Error('Claude Code não encontrado neste computador');
+  const s = config.load().settings;
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nara-claude-'));
+  try {
+    let prompt = '';
+    let hasImage = false;
+    if (typeof content === 'string') prompt = content;
+    else {
+      let n = 0;
+      for (const b of content) {
+        if (b.type === 'text') prompt += b.text + '\n';
+        else if (b.type === 'image' && b.source && b.source.data) {
+          const ext = (b.source.media_type || 'image/jpeg').split('/')[1].replace('jpeg', 'jpg');
+          const name = `imagem${++n}.${ext}`;
+          fs.writeFileSync(path.join(work, name), Buffer.from(b.source.data, 'base64'));
+          prompt = `Abra e olhe a imagem ./${name} (use a ferramenta Read).\n` + prompt;
+          hasImage = true;
+        }
+      }
+    }
+    const sysFile = path.join(work, 'system.txt');
+    fs.writeFileSync(sysFile, system);
+    const args = ['-p', '--output-format', 'json', '--model', s.claudeModel || 'claude-opus-5-5', '--system-prompt-file', sysFile,
+      '--tools', hasImage ? 'Read' : '', '--max-turns', hasImage ? '4' : '2'];
+    if (hasImage) args.push('--allowedTools', 'Read');
+    // não herda o login de uma sessão do app (usa o login próprio do Claude Code)
+    const env = {};
+    for (const [k, v] of Object.entries(process.env)) if (!/^(CLAUDE|ANTHROPIC)/.test(k) && k !== 'CLAUDECODE') env[k] = v;
+    const out = await new Promise((resolve, reject) => {
+      const p = spawn(exe, args, { cwd: work, env, windowsHide: true });
+      let so = '', se = '';
+      const timer = setTimeout(() => { p.kill(); reject(new Error('Claude local demorou demais (15 min)')); }, 15 * 60 * 1000);
+      p.stdout.on('data', (d) => (so += d));
+      p.stderr.on('data', (d) => { se += d; if (se.length > 5000) se = se.slice(-5000); });
+      p.on('error', (e) => { clearTimeout(timer); reject(e); });
+      p.on('close', () => { clearTimeout(timer); resolve({ so, se }); });
+      p.stdin.end(prompt);
+    });
+    let data;
+    try { data = JSON.parse(out.so.trim().split('\n').pop()); } catch (_) {
+      throw new Error('Claude local não respondeu: ' + (out.se || out.so).slice(-300));
+    }
+    if (data.is_error || data.subtype !== 'success') {
+      const why = String(data.result || data.terminal_reason || data.subtype || '');
+      if (/login|auth|401|credential/i.test(why) || data.terminal_reason === 'api_error') throw new Error('Claude local sem login ou com erro (' + why.slice(0, 120) + '). Rode uma vez: claude auth login');
+      if (/limit|usage|429/i.test(why)) throw new Error('limite de uso da assinatura Claude atingido, tente mais tarde');
+      throw new Error('Claude local: ' + why.slice(0, 200));
+    }
+    if (!data.result) throw new Error('Claude local não devolveu texto');
+    return data.result;
+  } finally {
+    fs.rmSync(work, { recursive: true, force: true });
+  }
+}
+
+/** Há alguma Claude disponível (chave de API ou Claude Code local)? */
+function claudeAvailable() {
+  return !!(config.load().settings.anthropicKey || claudeLocalPath());
+}
+
+// ---------------- Claude (API) ----------------
 /** content: string ou blocos (texto/imagem). Devolve só o texto final. */
 async function claudeAsk(system, content, { maxTokens = 16000 } = {}) {
   const s = config.load().settings;
+  if (!s.anthropicKey) return claudeLocalAsk(system, content);
   const stream = claude().beta.messages.stream({
     model: s.claudeModel || 'claude-opus-5-5',
     max_tokens: maxTokens,
@@ -80,7 +172,7 @@ async function brain(system, user, { json = false, maxTokens = 1500 } = {}) {
       return await deepseekChat([{ role: 'system', content: system + (json ? '\nResponda SOMENTE com JSON válido.' : '') }, { role: 'user', content: user }], { json, maxTokens });
     } catch (e) {
       logger.warn('DeepSeek falhou:', e.message);
-      if (!s.anthropicKey) throw e;
+      if (!claudeAvailable()) throw e;
     }
   }
   return claudeAsk(system + (json ? '\nResponda SOMENTE com JSON válido, sem texto antes ou depois.' : ''), user, { maxTokens: Math.max(maxTokens, 4000) });
@@ -90,7 +182,7 @@ async function brain(system, user, { json = false, maxTokens = 1500 } = {}) {
 async function engineJSON(system, user, { maxTokens = 16000 } = {}) {
   const s = config.load().settings;
   const sys = system + '\nResponda SOMENTE com um objeto JSON válido, sem texto antes ou depois e sem ```.';
-  if (s.anthropicKey) {
+  if (claudeAvailable()) {
     try {
       return extractJSON(await claudeAsk(sys, user, { maxTokens }));
     } catch (e) {
@@ -184,4 +276,4 @@ function splitText(text, max) {
   return out;
 }
 
-module.exports = { brain, engineJSON, claudeAsk, deepseekChat, analyzeStyle, tts, pcmToWav, splitText, claudeErrorMessage };
+module.exports = { brain, engineJSON, claudeAsk, claudeAvailable, claudeLocalPath, deepseekChat, analyzeStyle, tts, pcmToWav, splitText, claudeErrorMessage };

@@ -239,7 +239,7 @@ async function route(req, res) {
       try { await fn(); out[name] = 'ok ✅'; } catch (e) { out[name] = '❌ ' + (llm.claudeErrorMessage(e) || e.message).slice(0, 160); }
     };
     await t('DeepSeek (cérebro)', s.deepseekKey, () => llm.deepseekChat([{ role: 'user', content: 'Responda só: ok' }], { maxTokens: 5 }));
-    await t('Claude (motor)', s.anthropicKey, () => llm.claudeAsk('Responda curto.', 'Responda só: ok', { maxTokens: 2000 }));
+    await t(s.anthropicKey ? 'Claude (motor, chave API)' : 'Claude (motor, assinatura neste PC)', llm.claudeAvailable(), () => llm.claudeAsk('Responda curto.', 'Responda só: ok', { maxTokens: 2000 }));
     await t('Google (narração)', s.googleKey, () => llm.tts('Olá, teste de narração.', 'Kore'));
     await t('Voz da Nara (grátis)', true, async () => { if (!(await voice.synth('Olá, eu sou a Nara.'))) throw new Error('sem voz — rode de novo o instalador'); });
     await t('Groq (ouvir o Atom)', s.groqKey, async () => { const r = await voice.transcribe(llm.pcmToWav(Buffer.alloc(32000))); if (r == null) throw new Error('sem chave'); });
