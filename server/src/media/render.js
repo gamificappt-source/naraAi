@@ -32,6 +32,11 @@ function assTime(s) {
   return `${h}:${String(m).padStart(2, '0')}:${sec}`;
 }
 
+// caminho relativo com "/" (no Windows, "C:\\" quebraria o filtro de legendas do ffmpeg)
+function fontsRel(dir) {
+  return path.relative(dir, FONTS_DIR).split(path.sep).join('/') || '.';
+}
+
 function dims(format) {
   const q = config.load().settings.render.quality === '720' ? 720 : 1080;
   if (format === 'long') return q === 720 ? [1280, 720] : [1920, 1080];
@@ -146,7 +151,7 @@ async function renderVideo({ dir, scenes, audio, narration, profile }) {
 
   const music = profile.music ? pickMusic(profile.id) : null;
   const args = ['-y', '-loglevel', 'error', '-i', 'visual.mp4', '-i', path.basename(audio)];
-  let filter = `[0:v]subtitles=subs.ass:fontsdir=${FONTS_DIR}[v]`;
+  let filter = `[0:v]subtitles=subs.ass:fontsdir=${fontsRel(dir)}[v]`;
   let amap = '1:a';
   if (music) {
     args.push('-stream_loop', '-1', '-i', music);
@@ -192,7 +197,7 @@ Dialogue: 0,0:00:00.00,0:00:05.00,Small,,0,0,0,,${assEscape(handle ? '@' + handl
   const shade = isCover
     ? `drawbox=x=0:y=ih*0.45:w=iw:h=ih*0.55:color=black@0.55:t=fill,drawbox=x=70:y=ih-130:w=160:h=10:color=${ffColor(accent)}:t=fill`
     : `drawbox=x=0:y=ih*0.62:w=iw:h=ih*0.38:color=${ffColor(bg)}@0.92:t=fill,drawbox=x=0:y=ih*0.62:w=iw:h=8:color=${ffColor(accent)}:t=fill`;
-  const vf = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,eq=brightness=-0.04:saturation=1.05,${shade},subtitles=slide_${index}.ass:fontsdir=${FONTS_DIR}`;
+  const vf = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,eq=brightness=-0.04:saturation=1.05,${shade},subtitles=slide_${index}.ass:fontsdir=${fontsRel(dir)}`;
   const input = image && fs.existsSync(image) ? ['-i', path.basename(image)] : ['-f', 'lavfi', '-i', `color=c=${ffColor(bg)}:s=${W}x${H}`];
   const out = `slide_${String(index).padStart(2, '0')}.jpg`;
   await run('ffmpeg', ['-y', '-loglevel', 'error', ...input, '-vf', vf, '-frames:v', '1', '-q:v', '2', out], { cwd: dir });

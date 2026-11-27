@@ -76,6 +76,11 @@ async function playOnPhone(file, text) {
     await new Promise((r) => setTimeout(r, secs * 1000 + 600));
     return;
   }
+  if (file && (await commandExists('ffplay'))) {
+    // PC (Windows/Linux/Mac): toca nas caixas de som
+    await run('ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet', file]);
+    return;
+  }
   if (await commandExists('termux-tts-speak')) {
     await run('termux-tts-speak', ['-l', 'pt', '-r', '1.05', text]);
   }

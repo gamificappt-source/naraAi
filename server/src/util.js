@@ -78,7 +78,8 @@ function run(cmd, args, opts = {}) {
 
 async function commandExists(cmd) {
   try {
-    await run('sh', ['-c', `command -v ${cmd}`]);
+    if (process.platform === 'win32') await run('where', [cmd]);
+    else await run('sh', ['-c', `command -v ${cmd}`]);
     return true;
   } catch (_) {
     return false;

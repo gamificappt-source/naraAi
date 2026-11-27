@@ -323,6 +323,25 @@ Pela voz ou digitando no Painel:
 
 ---
 
+## 🖥️ Rodar no PC (Windows) em vez do celular
+
+1. No PC, abra o GitHub (logado) neste arquivo do projeto: **`install/INSTALAR-NARA-WINDOWS.bat`** → botão **Download raw file** (ícone de download).
+2. Dê **dois cliques** no arquivo baixado. Se o Windows avisar "O Windows protegeu o computador", clique **Mais informações → Executar assim mesmo**. Clique **Sim** quando pedir permissão de administrador.
+3. Ele instala tudo sozinho (Git, Node.js, ffmpeg, Python, voz grátis), pede **login no GitHub** (copie o código que aparece, cole no navegador, *Authorize*) e baixa a Nara em `C:\NARA\naraAi`.
+4. No final aparece a **SENHA DA PÁGINA** e o navegador abre em **http://localhost:8080**.
+
+O que o instalador também faz:
+- A Nara **liga sozinha** quando o Windows inicia (fica escondida, sem janela).
+- O PC **não entra em suspensão** quando está na tomada.
+- Libera a porta **8080** no firewall para o celular e o Atom S3R acessarem pelo endereço `http://IP-DO-PC:8080` (aparece no final e na aba **Sistema**).
+- A voz da Nara sai pelas **caixas de som do PC**.
+
+Para atualizar depois: rode o mesmo arquivo de novo. Os registros ficam em `C:\NARA\naraAi\server\data\nara.log` (ou na aba **Sistema** da página).
+
+> No PC não existe o "microfone do celular": para falar com a Nara pelo Atom S3R, use a chave **Groq** (grátis). Ou fale com ela digitando no Painel.
+
+---
+
 ## 🗂️ Estrutura do projeto (para curiosos)
 
 ```
