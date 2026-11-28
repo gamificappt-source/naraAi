@@ -134,6 +134,8 @@ input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-rad
 .mini.ok{color:var(--lime)}.mini.off{color:#aaa}
 .cover .stats{display:flex;gap:14px;margin-top:10px;font-size:12.5px}
 .cover .stats b{font-size:15px}
+.cover .acts{display:flex;gap:6px;margin-top:10px}
+.cover .acts .btn{flex:1}
 .new{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:2px dashed var(--line);background:transparent}
 .new:hover{border-color:var(--lime)}
 .new .plus{width:48px;height:48px;border-radius:50%;background:var(--lime);color:var(--ink);display:grid;place-items:center;font-size:34px;font-weight:700}
@@ -578,6 +580,10 @@ function viewPerfis() {
     <a class="cover new" id="bNew2"><div class="plus">+</div><b>Novo perfil</b><small class="muted">YouTube, Instagram ou os dois</small></a>
   </div>`;
   $('#bNew').onclick = newProfile; $('#bNew2').onclick = newProfile;
+  $$('[data-delprof]').forEach((b) => (b.onclick = async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (await deleteProfile(b.dataset.delprof)) viewPerfis();
+  }));
 }
 function coverCard(p) {
   const f = followers(p.id);
@@ -588,8 +594,17 @@ function coverCard(p) {
     <div class="shade"></div>
     <div class="badges"><span class="row" style="gap:5px">${p.enabled ? '' : '<span class="mini off">Pausado</span>'}<span class="mini ${yt ? 'ok' : 'off'}">${ICON.yt.replace('<svg', '<svg width="12" height="12"')} YT</span><span class="mini ${ig ? 'ok' : 'off'}">${ICON.ig.replace('<svg', '<svg width="12" height="12"')} IG</span></span>${p.logoImage ? `<img class="lg" src="${refUrl(p.logoImage)}" alt="">` : ''}</div>
     <div class="info"><span class="tag">${esc(p.videoFormat === 'long' ? 'Vídeo longo' : 'Shorts / Reels')}</span><div class="nm">${esc(p.name)}</div><div class="sub">${esc(p.niche || 'Sem nicho definido')}</div>
-      <div class="stats"><span><b>${nf((f.yt || 0) + (f.ig || 0))}</b> seg.</span><span class="${g == null ? 'muted' : g >= 0 ? 'up' : 'down'}"><b>${pct(g)}</b> 7d</span><span><b>${p.videosPerDay}</b> víd/dia</span></div></div>
+      <div class="stats"><span><b>${nf((f.yt || 0) + (f.ig || 0))}</b> seg.</span><span class="${g == null ? 'muted' : g >= 0 ? 'up' : 'down'}"><b>${pct(g)}</b> 7d</span><span><b>${p.videosPerDay}</b> víd/dia</span></div>
+      <div class="acts"><span class="btn sm white">Editar</span><button type="button" class="btn sm danger" data-delprof="${esc(p.id)}">Excluir</button></div></div>
   </a>`;
+}
+/** Exclui um perfil (com confirmação na própria página) */
+async function deleteProfile(id) {
+  const p = profById(id); if (!p) return false;
+  if (!(await ask(`Excluir o perfil “${p.name}”? As configurações dele serão apagadas (os vídeos já postados continuam nas redes).`, 'Excluir perfil', 'Cancelar', true))) return false;
+  await api('/api/profiles/' + id, { method: 'DELETE' });
+  setDirty(false); await refresh(); toast('Perfil excluído');
+  return true;
 }
 function newProfile() {
   modal(`<div class="label">Novo perfil</div><h2 class="h2" style="margin:6px 0 16px">Como se chama?</h2>
@@ -702,6 +717,7 @@ async function viewPerfil(id) {
       <div class="row">
         <button class="btn pri" data-make="video">${ICON.film} Produzir vídeo agora</button>
         <button class="btn white" data-make="carousel">${ICON.layers} Carrossel agora</button>
+        <button class="btn danger" id="bDelProf">Excluir perfil</button>
       </div>
     </div>
   </section>
@@ -891,6 +907,7 @@ function bindProfile(p) {
       closeModal(); toast('Produção iniciada! Acompanhe no Painel.'); await refresh();
     });
   }));
+  $('#bDelProf').onclick = async () => { if (await deleteProfile(p.id)) location.hash = '#/perfis'; };
   $('#bYt').onclick = (e) => busy(e.currentTarget, async () => {
     if (dirty) await saveProfile();
     if (!S.settings.youtubeClientId) throw new Error('Primeiro cole o Client ID e o Client Secret do YouTube em Ajustes.');
