@@ -183,6 +183,12 @@ function updateSettings(patch) {
 function upsertProfile(p) {
   const c = load();
   if (p.instagram && typeof p.instagram.accessToken === 'string' && p.instagram.accessToken.includes('••')) delete p.instagram.accessToken;
+  // token novo colado: a conta é descoberta de novo (a não ser que o ID tenha sido informado)
+  if (p.instagram && typeof p.instagram.accessToken === 'string' && p.instagram.accessToken.trim()) {
+    p.instagram.accessToken = p.instagram.accessToken.trim();
+    if (!p.instagram.userId || !String(p.instagram.userId).trim()) p.instagram.userId = '';
+    p.instagram.tokenRefreshedAt = '';
+  }
   if (p.youtube) delete p.youtube.refreshToken; // só o OAuth altera
   let existing = c.profiles.find((x) => x.id === p.id);
   if (!existing) {

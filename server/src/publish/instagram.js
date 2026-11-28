@@ -1,10 +1,16 @@
-// Instagram (API do Instagram com login do Instagram — conta Profissional: Criador ou Empresa)
+// Instagram (conta Profissional: Criador ou Empresa) — aceita token do login do Instagram ou do login unificado da Meta
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 const { fetchRetry, sleep, logger } = require('../util');
 
-const API = 'https://graph.instagram.com/v22.0';
+// Dois tipos de token:
+//  - IGAA… (login do Instagram)      → graph.instagram.com
+//  - EAA…  (login unificado da Meta / token de sistema do portfólio) → graph.facebook.com
+const IG_API = 'https://graph.instagram.com/v22.0';
+const FB_API = 'https://graph.facebook.com/v22.0';
+const isFbToken = (p) => /^EAA/.test(String(p.instagram.accessToken || '').trim());
+const apiBase = (p) => (isFbToken(p) ? FB_API : IG_API);
 
 /** O Instagram exige imagens em um link público. Subimos temporariamente (24h) no litterbox.catbox.moe */
 async function publicUrl(file) {
@@ -18,9 +24,9 @@ async function publicUrl(file) {
   return txt;
 }
 
-async function api(p, method, endpoint, params = {}) {
-  const url = new URL(API + endpoint);
-  const body = new URLSearchParams({ ...params, access_token: p.instagram.accessToken });
+async function api(p, method, endpoint, params = {}, base = null) {
+  const url = new URL((base || apiBase(p)) + endpoint);
+  const body = new URLSearchParams({ ...params, access_token: String(p.instagram.accessToken).trim() });
   const res = await fetchRetry(method === 'GET' ? url + '?' + body : url, method === 'GET' ? {} : { method, body }, { timeoutMs: 120000 });
   const d = await res.json().catch(() => ({}));
   if (!res.ok || d.error) throw new Error('Instagram: ' + JSON.stringify(d.error || d).slice(0, 400));
@@ -29,13 +35,45 @@ async function api(p, method, endpoint, params = {}) {
 
 async function check(p) {
   if (!p.instagram.accessToken) throw new Error(`Perfil ${p.name}: Instagram não configurado (falta o token)`);
-  if (!p.instagram.userId) {
-    // descobre o ID da conta sozinho a partir do token
+  if (p.instagram.userId) return;
+  // descobre o ID da conta sozinho a partir do token
+  if (!isFbToken(p)) {
     const d = await api(p, 'GET', '/me', { fields: 'user_id,username' });
     p.instagram.userId = String(d.user_id || d.id);
     if (d.username) p.instagram.username = d.username;
     config.save();
+    return;
   }
+  // token da Meta (EAA…): procura a conta do Instagram ligada ao token
+  const tries = [
+    async () => {
+      const d = await api(p, 'GET', '/me/accounts', { fields: 'instagram_business_account{id,username}', limit: '50' });
+      return (d.data || []).map((x) => x.instagram_business_account).filter(Boolean);
+    },
+    async () => {
+      const d = await api(p, 'GET', '/me', { fields: 'instagram_business_accounts{id,username}' });
+      return (d.instagram_business_accounts && d.instagram_business_accounts.data) || [];
+    },
+    async () => {
+      // token que também vale no endereço do Instagram
+      const d = await api(p, 'GET', '/me', { fields: 'user_id,username' }, IG_API);
+      return d.user_id ? [{ id: d.user_id, username: d.username }] : [];
+    },
+  ];
+  let found = [];
+  const errs = [];
+  for (const t of tries) {
+    try { found = await t(); if (found.length) break; } catch (e) { errs.push(e.message.slice(0, 120)); }
+  }
+  if (!found.length) {
+    throw new Error('Não achei a conta do Instagram ligada a este token. Cole o "ID da conta do Instagram" (aparece na Meta, ao lado da conta, em "Gerar tokens de acesso") no campo do perfil. ' + errs.join(' | '));
+  }
+  // se o token dá acesso a várias contas, prefere a que tem o @ informado no perfil
+  const want = String(p.instagram.username || '').replace(/^@/, '').toLowerCase();
+  const pick = found.find((a) => want && String(a.username || '').toLowerCase() === want) || found[0];
+  p.instagram.userId = String(pick.id);
+  if (pick.username) p.instagram.username = pick.username;
+  config.save();
 }
 
 async function waitReady(p, id, maxMin = 15) {
@@ -105,7 +143,7 @@ async function postImages(p, files, caption) {
 
 async function accountStats(p) {
   await check(p);
-  const d = await api(p, 'GET', '/me', { fields: 'user_id,username,followers_count,follows_count,media_count' });
+  const d = await api(p, 'GET', `/${p.instagram.userId}`, { fields: 'username,followers_count,follows_count,media_count' });
   if (d.username && p.instagram.username !== d.username) {
     p.instagram.username = d.username;
     config.save();
@@ -125,7 +163,7 @@ async function mediaStats(p, id) {
 
 /** Tokens longos do Instagram duram 60 dias; renovamos a cada ~7 dias */
 async function refreshToken(p) {
-  if (!p.instagram.accessToken) return;
+  if (!p.instagram.accessToken || isFbToken(p)) return; // token da Meta (EAA…) não expira / não usa essa renovação
   const last = p.instagram.tokenRefreshedAt ? new Date(p.instagram.tokenRefreshedAt).getTime() : 0;
   if (Date.now() - last < 7 * 86400000) return;
   try {

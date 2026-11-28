@@ -832,7 +832,8 @@ async function viewPerfil(id) {
         </div></div>
         <div class="card"><div class="cardh"><h2 class="h2">${ICON.ig.replace('<svg', '<svg width="24" height="24" style="color:#E1306C;vertical-align:-4px"')} Instagram</h2>${p.instagram.username ? `<span class="st done">@${esc(p.instagram.username)}</span>` : '<span class="st">Não conectado</span>'}</div><div class="fields">
           ${fld('Postar no Instagram', 'instagram.enabled', 'switch')}
-          ${fld('Token do Instagram', 'instagram.accessToken', 'secret', { ph: 'IGAA…', help: 'Gerado no app da Meta (passo a passo em Ajustes → Como conectar).' })}
+          ${fld('Token do Instagram', 'instagram.accessToken', 'secret', { ph: 'IGAA… ou EAA…', help: 'Gerado no app da Meta, em “Gerar tokens de acesso”. Aceita os dois tipos.' })}
+          ${fld('ID da conta do Instagram (opcional)', 'instagram.userId', 'text', { ph: 'descoberto sozinho', help: 'Só preencha se o teste pedir: é o número ao lado da conta, na Meta.' })}
           <div class="row"><button class="btn" id="bIg">Testar conexão</button></div>
           <div class="fields f3">${fld('Reels', 'instagram.reels', 'switch')}${fld('Carrosséis', 'instagram.carousels', 'switch')}${fld('Imagens', 'instagram.images', 'switch')}</div>
           ${fld('Reels também no feed', 'instagram.shareToFeed', 'switch')}
@@ -970,6 +971,11 @@ async function upload(p, kind, file) {
 async function saveProfile() {
   const body = structuredClone(DRAFT);
   if (body.instagram && (!body.instagram.accessToken || body.instagram.accessToken.includes('••'))) delete body.instagram.accessToken;
+  else if (body.instagram) {
+    // token novo: se o ID não foi mexido, a Nara descobre a conta de novo
+    const orig = profById(body.id);
+    if (orig && String(orig.instagram.userId || '') === String(body.instagram.userId || '')) body.instagram.userId = '';
+  }
   if (body.youtube) delete body.youtube.refreshToken;
   await api('/api/profiles', { body });
   setDirty(false); await refresh();
