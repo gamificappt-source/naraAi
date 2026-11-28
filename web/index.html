@@ -250,6 +250,18 @@ code{font-family:var(--mono);background:var(--bg2);border:1px solid var(--line);
 .fontlib span{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);font-size:12px}
 .fontlib button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px}
 .fontlib button:hover{color:var(--red)}
+.refpath{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.refpath code{flex:1;min-width:0;font-size:11px}
+.refgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin-bottom:8px}
+.refimg,.refadd{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--line)}
+.refimg img{width:100%;height:100%;object-fit:cover;display:block}
+.refimg .ok{position:absolute;left:4px;bottom:4px;width:18px;height:18px;border-radius:50%;background:var(--lime);color:var(--ink);font-size:11px;font-style:normal;font-weight:700;display:grid;place-items:center}
+.refimg .rm{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;cursor:pointer;opacity:0;transition:.15s}
+.refimg:hover .rm{opacity:1}
+.refimg .rm:hover{background:var(--red)}
+.refadd{display:grid;place-items:center;font-size:28px;color:var(--muted);cursor:pointer;border-style:dashed}
+.refadd:hover{color:var(--lime);border-color:var(--lime)}
+.refbox.over{outline:2px dashed var(--lime);outline-offset:4px;border-radius:12px}
 hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
 
 /* ---------- responsivo ---------- */
@@ -747,9 +759,11 @@ async function viewPerfil(id) {
           ${fld('Público', 'audience', 'text', { ph: 'Ex.: adultos 18–40 que gostam de investigação' })}
           ${fld('Tom do conteúdo', 'tone')}
           ${fld('Evitar', 'avoid', 'text', { ph: 'Assuntos ou palavras que a Nara nunca deve usar' })}
-          ${fld('Fila de temas (opcional — 1 por linha)', '__topics', 'textarea', { help: 'Se ficar vazia, a Nara pesquisa sozinha temas novos, seguindo o que dá mais engajamento.' })}
+          ${fld('Fila de temas (opcional — 1 por linha)', '__topics', 'textarea', { help: 'Estes saem primeiro. Depois a Nara usa o banco de temas abaixo.' })}
           ${fld('Ativo', 'enabled', 'switch', { help: 'Desligado = este perfil para de produzir.' })}
         </div></div>
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Banco de temas</h2><p class="muted" style="margin:4px 0 0">A Claude pesquisa ~12 temas variados de uma vez (economiza) e nunca repete o que já foi publicado.</p></div><button class="btn sm ghost" id="bNewTopics">Trocar por novos</button></div>
+          <div id="topicBox"><div class="muted">Carregando…</div></div></div>
         <div class="grid" style="align-content:start">
           <div class="card"><div class="cardh"><h2 class="h2">Capa</h2><span class="label">biblioteca</span></div>${dropzone('cover', p.coverImage, 'Capa do perfil', 'Aparece na biblioteca de perfis (vertical fica melhor).', false)}</div>
           <div class="card"><div class="cardh"><h2 class="h2">Logo do canal</h2><span class="label">chamada final</span></div>${dropzone('logo', p.logoImage, 'Logo', 'PNG com fundo transparente fica perfeito.')}
@@ -771,9 +785,8 @@ async function viewPerfil(id) {
           ${fld('De onde vêm as imagens', 'imageSource', 'select', { opts: [['mix', 'Misto (internet + IA)'], ['web', 'Só fotos reais da internet'], ['ai', 'Só geradas por IA']] })}
           ${fld('Música de fundo', 'music', 'switch', { help: 'Coloque MP3 sem direitos autorais em server\\data\\music' })}
         </div></div>
-        <div class="card"><div class="cardh"><h2 class="h2">Referência de layout</h2><span class="label">a IA copia o estilo</span></div>
-          ${dropzone('reference', p.referenceImage, 'Imagem de referência do vídeo', 'Um frame do estilo que você quer.')}
-          ${p.styleAnalysis ? `<div class="analysis"><b>O que a Claude entendeu:</b> ${esc(p.styleAnalysis)}</div>` : ''}</div>
+        <div class="card"><div class="cardh"><div><h2 class="h2">Referências do vídeo</h2><p class="muted" style="margin:4px 0 0">Uma imagem diferente a cada vídeo (rodízio).</p></div></div>
+          <div class="refbox" data-refkind="video"><div class="muted">Carregando…</div></div></div>
         <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Fonte das legendas</h2><p class="muted" style="margin:4px 0 0">Cores, tamanho e posição são automáticos (seguem a sua referência).</p></div></div>
           ${fontPicker('subtitle.font')}</div>
         <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Adicionar fontes</h2><p class="muted" style="margin:4px 0 0">Cole o código de incorporação do Google Fonts (fonts.google.com → Get font → Get embed code). Todas as variações do código são baixadas.</p></div></div>
@@ -795,9 +808,8 @@ async function viewPerfil(id) {
       <div class="grid g2">
         <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Prompt padrão do carrossel</h2><p class="muted" style="margin:6px 0 0">A IA só troca o assunto e cria os posts.</p></div></div>
           ${fld('', 'carouselPrompt', 'textarea', { big: true, ph: 'Ex.: Carrossel educativo, slide 1 com pergunta chocante, fundo escuro, texto curto...' })}</div>
-        <div class="card"><div class="cardh"><h2 class="h2">Referência do carrossel</h2></div>
-          ${dropzone('carousel', p.carouselReference, 'Imagem de referência dos posts', 'Se não enviar, usa a referência do vídeo.')}
-          ${p.carouselStyleAnalysis ? `<div class="analysis"><b>O que a Claude entendeu:</b> ${esc(p.carouselStyleAnalysis)}</div>` : ''}</div>
+        <div class="card"><div class="cardh"><div><h2 class="h2">Referências do carrossel</h2><p class="muted" style="margin:4px 0 0">Uma imagem diferente a cada post (rodízio).</p></div></div>
+          <div class="refbox" data-refkind="carousel"><div class="muted">Carregando…</div></div></div>
         <div class="card"><div class="cardh"><h2 class="h2">Detalhes</h2></div><div class="fields">
           ${fld('Número de slides', 'carouselSlides', 'number', { min: 2, max: 10 })}
           <div class="field"><span>Fonte dos títulos</span>${fontPicker('carouselFont')}</div>
@@ -848,6 +860,8 @@ async function viewPerfil(id) {
   bindFonts((field, name) => { setPath(DRAFT, field, name); setDirty(true, saveProfile); });
   showTab(tab);
   renderProfileDash(p);
+  loadRefs(p);
+  loadTopics(p);
   // ao abrir o perfil, busca os números se estiverem velhos (mais de 30 min)
   const L = latestStats(p.id);
   if ((p.instagram.accessToken || p.youtube.refreshToken) && (!L.at || Date.now() - new Date(L.at).getTime() > 30 * 60000)) refreshProfileStats(p);
@@ -856,6 +870,59 @@ function showTab(t) {
   sessionStorage.setItem('ptab', t);
   $$('#ptabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   $$('#panes .pane').forEach((s) => s.classList.toggle('on', s.dataset.p === t));
+}
+/* ---------- pasta de referências do perfil ---------- */
+async function loadRefs(p) {
+  let r;
+  try { r = await api(`/api/profiles/${p.id}/refs`); } catch (e) { $$('.refbox').forEach((b) => (b.innerHTML = `<div class="err">${esc(e.message)}</div>`)); return; }
+  $$('.refbox').forEach((box) => {
+    const kind = box.dataset.refkind;
+    const info = r[kind];
+    const imgs = info.files.map((f) => `<div class="refimg" title="${esc(f.name)}${f.lastUsed ? ' — usada ' + new Date(f.lastUsed).toLocaleDateString('pt-BR') : ' — ainda não usada'}">
+      <img loading="lazy" src="/api/profiles/${esc(p.id)}/refimg/${kind}/${encodeURIComponent(f.name)}?t=${encodeURIComponent(TOKEN)}">
+      ${f.analysed ? '<i class="ok" title="Estilo já analisado (não gasta de novo)">✓</i>' : ''}
+      <button type="button" class="rm" data-rmref="${esc(f.name)}" title="Remover">×</button></div>`).join('');
+    box.innerHTML = `<div class="refpath"><code>${esc(info.dir)}</code><button type="button" class="btn sm" data-openref="${kind}">Abrir pasta</button></div>
+      <div class="refgrid">${imgs}<label class="refadd" title="Adicionar imagens">+<input type="file" accept="image/png,image/jpeg,image/webp" multiple hidden></label></div>
+      <small class="muted">${info.files.length ? `${info.files.length} imagem(ns). Pode copiar direto para a pasta também.` : 'Vazia: coloque várias imagens de estilos diferentes (arraste para cá ou copie para a pasta).'}</small>`;
+    $('[data-openref]', box).onclick = (e) => busy(e.currentTarget, () => api(`/api/profiles/${p.id}/refs/open`, { body: { kind } }));
+    const inp = $('.refadd input', box);
+    inp.onchange = () => uploadRefs(p, kind, [...inp.files]);
+    box.ondragover = (e) => { e.preventDefault(); box.classList.add('over'); };
+    box.ondragleave = () => box.classList.remove('over');
+    box.ondrop = (e) => { e.preventDefault(); box.classList.remove('over'); uploadRefs(p, kind, [...e.dataTransfer.files].filter((f) => /^image\//.test(f.type))); };
+    $$('[data-rmref]', box).forEach((b) => (b.onclick = async () => {
+      if (!(await ask('Tirar esta imagem da pasta de referências?', 'Remover', 'Cancelar', true))) return;
+      await api(`/api/profiles/${p.id}/refs/${kind}/${encodeURIComponent(b.dataset.rmref)}`, { method: 'DELETE' });
+      loadRefs(p);
+    }));
+  });
+}
+async function uploadRefs(p, kind, files) {
+  if (!files.length) return;
+  toast(`Enviando ${files.length} imagem(ns)…`);
+  try {
+    const items = [];
+    for (const f of files.slice(0, 30)) items.push({ name: f.name, dataUrl: await shrink(f, 'ref') });
+    await api(`/api/profiles/${p.id}/refs`, { body: { kind, items } });
+    toast('Referências adicionadas!');
+  } catch (e) { toast(e.message, true); }
+  loadRefs(p);
+}
+/* ---------- banco de temas ---------- */
+async function loadTopics(p) {
+  const box = $('#topicBox'); if (!box) return;
+  let t;
+  try { t = await api(`/api/profiles/${p.id}/topics`); } catch (e) { box.innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
+  const row = (x, used) => `<div class="item"><div class="t"><b>${esc(x.title || x.topic)}</b><small>${esc(x.category || '')}${used && x.at ? ' · ' + new Date(x.at).toLocaleDateString('pt-BR') : ''}${!used && x.why ? ' · ' + esc(x.why) : ''}</small></div></div>`;
+  box.innerHTML = `<div class="grid g2">
+    <div><div class="label" style="margin-bottom:6px">Próximos (${t.bank.length})</div><div class="list" style="max-height:260px;overflow:auto">${t.bank.map((x) => row(x, false)).join('') || '<div class="empty">Vazio — na próxima produção a Claude pesquisa um lote novo.</div>'}</div></div>
+    <div><div class="label" style="margin-bottom:6px">Já usados (${t.total})</div><div class="list" style="max-height:260px;overflow:auto">${t.used.map((x) => row(x, true)).join('') || '<div class="empty">Nenhum ainda.</div>'}</div></div></div>`;
+  const nb = $('#bNewTopics');
+  if (nb) nb.onclick = async () => {
+    if (!(await ask('Descartar os próximos temas? Na próxima produção a Claude pesquisa um lote novo (os já usados continuam bloqueados).', 'Trocar', 'Cancelar'))) return;
+    await api(`/api/profiles/${p.id}/topics/clear`, { body: {} }); loadTopics(p);
+  };
 }
 /** Último registro de números de um perfil */
 function latestStats(pid) {
@@ -979,7 +1046,7 @@ function bindProfile(p) {
 function keepDraft(fn) { const d = DRAFT, wasDirty = dirty; fn(); }
 async function shrink(file, kind) {
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
-  const max = kind === 'logo' ? 800 : 1600;
+  const max = kind === 'logo' ? 800 : kind === 'ref' ? 1200 : 1600; // referências menores = análise mais barata
   const sc = Math.min(1, max / Math.max(img.width, img.height));
   const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);

@@ -82,6 +82,35 @@ async function pickTopic(profile, history, kind, perf = []) {
   return `${r.topic} — ${r.angle || ''}`.trim();
 }
 
+/**
+ * Pesquisa um LOTE de temas de uma vez (economiza: 1 pesquisa serve para vários vídeos).
+ * avoid = títulos/temas já publicados; queued = temas que já estão no banco.
+ */
+async function researchTopics(profile, avoid, queued, perf, n = 12, kinds = ['video']) {
+  const web = config.load().settings.webTrends !== false;
+  const nCats = Math.max(4, Math.ceil(n / 2));
+  return askJSON(
+    'Você é estrategista de conteúdo viral para redes sociais, ligado nas atualidades e no calendário. Responde só com JSON.',
+    [
+      profileBrief(profile),
+      dateLine(),
+      `Formatos que serão produzidos: ${kinds.map((k) => (k === 'video' ? 'vídeos' : 'carrosséis/posts')).join(' e ')}.`,
+      web ? 'Faça UMA pesquisa rápida na internet (WebSearch) por notícias e assuntos em alta ligados ao nicho e por datas/aniversários de fatos nas próximas semanas. Não pesquise cada tema separadamente.' : '',
+      profile.learnFromResults !== false ? performanceText(perf) : '',
+      `Crie ${n} temas NOVOS e específicos (nome do caso/lugar/pessoa/data), com alto potencial de retenção e compartilhamento.`,
+      `DIVERSIDADE OBRIGATÓRIA: espalhe em pelo menos ${nCats} categorias/subtemas diferentes dentro do nicho, no máximo 2 temas por categoria, `
+        + 'e misture ~1/3 de atualidades/datas próximas com ~2/3 de temas atemporais. Nada de variações do mesmo caso.',
+      'Use só fatos reais e verificáveis.',
+      'JÁ PUBLICADOS (não repita e não faça variação próxima destes):',
+      avoid.length ? avoid.map((t) => '- ' + t).join('\n') : '(nenhum ainda)',
+      queued.length ? 'JÁ NA FILA (também não repita):\n' + queued.map((t) => '- ' + String(t).slice(0, 90)).join('\n') : '',
+      '',
+      'JSON: {"topics":[{"topic":"tema em uma frase","angle":"gancho/ângulo","category":"subtema curto (2-3 palavras)","why":"por que agora (curto)"}]}',
+    ].filter((x) => x !== '').join('\n'),
+    { temperature: 1.1, web, maxTokens: 6000 }
+  );
+}
+
 async function videoScript(profile, topic) {
   const seconds = Number(profile.videoSeconds) || 50;
   const words = Math.round(seconds * 2.5);
@@ -119,4 +148,4 @@ async function carouselContent(profile, topic, slides) {
   );
 }
 
-module.exports = { dateLine, pickTopic, videoScript, carouselContent, profileBrief, STYLE_LABEL };
+module.exports = { dateLine, pickTopic, researchTopics, videoScript, carouselContent, profileBrief, STYLE_LABEL };

@@ -15,6 +15,8 @@ const instagram = require('./publish/instagram');
 const { DATA_DIR, WEB_DIR, logger, nowInTz, uid } = require('./util');
 const { FONTS_DIR } = require('./media/render');
 const fonts = require('./media/fonts');
+const refs = require('./media/refs');
+const topics = require('./topics');
 
 const PORT = Number(process.env.PORT) || 8080;
 const MIME = { '.ttf': 'font/ttf', '.otf': 'font/otf', '.woff2': 'font/woff2', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
@@ -170,6 +172,7 @@ async function route(req, res) {
   }
   if (m === 'POST' && p === '/api/profiles') {
     const prof = config.upsertProfile(await json(req));
+    try { refs.folders(prof); } catch (_) {} // cria as pastas de referências do perfil
     return send(res, 200, { profile: config.publicView().profiles.find((x) => x.id === prof.id) });
   }
   let mm;
@@ -209,6 +212,35 @@ async function route(req, res) {
     } catch (e) {
       return send(res, 200, { ok: true, file: name, analysis: '', warning: 'Imagem salva. A análise do estilo será feita na próxima produção: ' + e.message });
     }
+  }
+  // ---------- pastas de referências do perfil ----------
+  if ((mm = p.match(/^\/api\/profiles\/([\w-]+)\/refs(?:\/(open|clear))?$/))) {
+    const prof = config.getProfile(mm[1]);
+    if (!prof) return send(res, 404, { error: 'perfil não encontrado' });
+    if (m === 'GET' && !mm[2]) return send(res, 200, refs.list(prof));
+    const b = await json(req);
+    if (m === 'POST' && mm[2] === 'open') return send(res, 200, { dir: refs.open(prof, b.kind) });
+    if (m === 'POST' && !mm[2]) {
+      const names = [];
+      for (const it of b.items || [b]) names.push(refs.add(prof, b.kind, it.dataUrl, it.name));
+      return send(res, 200, { added: names, ...refs.list(prof) });
+    }
+  }
+  if ((mm = p.match(/^\/api\/profiles\/([\w-]+)\/refs\/(video|carousel)\/([^/]+)$/)) && m === 'DELETE') {
+    const prof = config.getProfile(mm[1]);
+    if (!prof) return send(res, 404, { error: 'perfil não encontrado' });
+    refs.remove(prof, mm[2], decodeURIComponent(mm[3]));
+    return send(res, 200, refs.list(prof));
+  }
+  if ((mm = p.match(/^\/api\/profiles\/([\w-]+)\/refimg\/(video|carousel)\/([^/]+)$/)) && m === 'GET') {
+    const prof = config.getProfile(mm[1]);
+    if (!prof) return send(res, 404, { error: 'perfil não encontrado' });
+    return serveFile(res, refs.fileOf(prof, mm[2], decodeURIComponent(mm[3])), req);
+  }
+  // ---------- banco de temas ----------
+  if ((mm = p.match(/^\/api\/profiles\/([\w-]+)\/topics(\/clear)?$/))) {
+    if (m === 'GET' && !mm[2]) return send(res, 200, topics.view(mm[1]));
+    if (m === 'POST' && mm[2]) { topics.clearBank(mm[1]); return send(res, 200, topics.view(mm[1])); }
   }
   if (m === 'GET' && p === '/api/voices') {
     return send(res, 200, { google: llm.GOOGLE_VOICES, nara: voice.NARA_VOICES });

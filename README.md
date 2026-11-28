@@ -61,6 +61,14 @@ Cada vídeo é uma conversa **nova e descartável** (não acumula nada e não tr
 **Fontes:** em fonts.google.com escolha a fonte → **Get font → Get embed code** → copie o `<link …>` e cole em **Adicionar fontes**
 (no perfil, aba Vídeo, ou em Ajustes). A Nara baixa todas as variações (pesos) do código e elas aparecem para escolher em todos os perfis.
 
+**Temas sem repetir (e gastando menos):** a Claude pesquisa um **lote de ~12 temas** de uma vez, em categorias diferentes, e guarda no
+**banco de temas** do perfil. Cada vídeo pega o próximo, sem repetir a mesma categoria seguida. Tudo que já foi usado fica num **histórico
+permanente** (`server\data\topics\`) e temas parecidos são barrados. Quando o banco acaba, ela pesquisa outro lote.
+
+**Pastas de referências:** cada perfil tem `C:\NARA\Referencias\<Perfil>\Video` e `\Carrossel`. Coloque várias imagens de estilos que você gosta
+(copiando para a pasta ou arrastando na página). A cada post a Nara usa **uma diferente** (a que está há mais tempo sem uso), e cada imagem é
+analisada pela Claude **uma vez só**.
+
 > Tudo também pode ser mudado **conversando** com a Nara: "muda o perfil X para 3 vídeos por dia de 2 minutos, só de segunda a sexta", "troca a voz do perfil Y para Charon", "cria um perfil chamado Z sobre história do Brasil".
 
 ---

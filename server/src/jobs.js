@@ -8,6 +8,8 @@ const images = require('./media/images');
 const render = require('./media/render');
 const youtube = require('./publish/youtube');
 const instagram = require('./publish/instagram');
+const topics = require('./topics');
+const refs = require('./media/refs');
 const { DATA_DIR, ensureDir, readJSON, writeJSON, uid, logger } = require('./util');
 
 const JOBS_FILE = path.join(DATA_DIR, 'jobs.json');
@@ -186,18 +188,43 @@ async function runJob(job) {
   job.error = '';
   persist();
   await ensureStyle(p);
+  const kind = job.type === 'video' ? 'video' : 'carousel';
+  let bankTopic = null;
   if (!job.topic) {
     if (p.topics && p.topics.length) {
       job.topic = p.topics.shift();
       config.save();
+      topics.recordManual(p.id, job.topic, kind);
     } else {
-      step(job, 'Pesquisando tema…');
-      job.topic = await writer.pickTopic(p, history(), job.type === 'video' ? 'video' : 'carousel', performance(p.id));
+      step(job, 'Pegando tema do banco (pesquisa em lote quando acaba)…');
+      const titles = history().filter((h) => h.profileId === p.id).map((h) => h.title);
+      bankTopic = await topics.next(p, kind, performance(p.id), titles);
+      job.topic = `${bankTopic.topic}${bankTopic.angle ? ' — ' + bankTopic.angle : ''}`;
+      job.category = bankTopic.category;
     }
+  } else if (!job.topicRecorded) {
+    topics.recordManual(p.id, job.topic, kind);
   }
-  step(job, 'Tema: ' + job.topic);
-  if (job.type === 'video') await produceVideo(job, p);
-  else await produceImages(job, p);
+  job.topicRecorded = true;
+  step(job, 'Tema: ' + job.topic + (job.category ? ` (${job.category})` : ''));
+
+  // referência da vez (pasta do perfil, em rodízio) — deixa cada post com uma cara diferente
+  let P = p;
+  try {
+    const ref = await refs.pick(p, kind);
+    if (ref) {
+      job.reference = ref.file;
+      step(job, 'Referência visual: ' + ref.file);
+      const pal = (ref.palette || []).filter((c) => /^#[0-9a-f]{6}$/i.test(c));
+      P = { ...p, styleAnalysis: ref.analysis, carouselStyleAnalysis: ref.analysis, palette: pal.length >= 2 ? pal.slice(0, 3) : p.palette };
+    }
+  } catch (e) {
+    logger.warn('Pasta de referências:', e.message);
+  }
+
+  if (job.type === 'video') await produceVideo(job, P);
+  else await produceImages(job, P);
+  topics.recordTitle(p.id, bankTopic ? bankTopic.topic : job.topic, job.title);
 
   if (p.autoPost) await publishJob(job);
   else {
