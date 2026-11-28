@@ -64,7 +64,7 @@ async function postReel(p, file, caption) {
   let containerId;
   // 1ª tentativa: upload direto (resumable) — o arquivo não precisa ficar público
   try {
-    const c = await api(p, 'POST', `/${p.instagram.userId}/media`, { media_type: 'REELS', upload_type: 'resumable', caption, share_to_feed: 'true' });
+    const c = await api(p, 'POST', `/${p.instagram.userId}/media`, { media_type: 'REELS', upload_type: 'resumable', caption, share_to_feed: p.instagram.shareToFeed === false ? 'false' : 'true' });
     const size = fs.statSync(file).size;
     const up = await fetchRetry(`https://rupload.facebook.com/ig-api-upload/v22.0/${c.id}`, {
       method: 'POST',
@@ -76,7 +76,7 @@ async function postReel(p, file, caption) {
   } catch (e) {
     logger.warn('Upload direto do Reels falhou, usando link temporário:', e.message.slice(0, 200));
     const url = await publicUrl(file);
-    const c = await api(p, 'POST', `/${p.instagram.userId}/media`, { media_type: 'REELS', video_url: url, caption, share_to_feed: 'true' });
+    const c = await api(p, 'POST', `/${p.instagram.userId}/media`, { media_type: 'REELS', video_url: url, caption, share_to_feed: p.instagram.shareToFeed === false ? 'false' : 'true' });
     containerId = c.id;
   }
   await waitReady(p, containerId);

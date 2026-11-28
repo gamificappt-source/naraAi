@@ -83,10 +83,10 @@ async function uploadVideo(p, file, { title, description, tags = [] }) {
       title: (title + (isShort && !/#shorts/i.test(title) ? ' #Shorts' : '')).slice(0, 100),
       description: description.slice(0, 4900),
       tags: tags.map((t) => t.replace(/^#/, '')).slice(0, 15),
-      categoryId: '22',
+      categoryId: String(p.youtube.categoryId || '24'),
       defaultLanguage: p.language,
     },
-    status: { privacyStatus: p.youtube.privacy || 'public', selfDeclaredMadeForKids: false },
+    status: { privacyStatus: p.youtube.privacy || 'public', selfDeclaredMadeForKids: !!p.youtube.madeForKids },
   };
   const size = fs.statSync(file).size;
   const init = await fetchRetry('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {

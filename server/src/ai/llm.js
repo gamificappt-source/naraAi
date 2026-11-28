@@ -53,7 +53,7 @@ function claudeLocalPath() {
   const s = config.load().settings;
   if (s.claudeLocal === false) return null;
   if (s.claudeCliPath && fs.existsSync(s.claudeCliPath)) return s.claudeCliPath;
-  if (Date.now() - cliCache.at < 10 * 60 * 1000) return cliCache.path;
+  if (Date.now() - cliCache.at < 10 * 60 * 1000 && cliCache.path && fs.existsSync(cliCache.path)) return cliCache.path;
   const home = os.homedir();
   const found = [];
   if (process.platform === 'win32') {
@@ -69,7 +69,7 @@ function claudeLocalPath() {
   return cliCache.path;
 }
 
-async function claudeLocalAsk(system, content) {
+async function claudeLocalAsk(system, content, { web = false } = {}) {
   const exe = claudeLocalPath();
   if (!exe) throw new Error('Claude Code não encontrado neste computador');
   const s = config.load().settings;
@@ -93,9 +93,12 @@ async function claudeLocalAsk(system, content) {
     }
     const sysFile = path.join(work, 'system.txt');
     fs.writeFileSync(sysFile, system);
-    const args = ['-p', '--output-format', 'json', '--model', s.claudeModel || 'claude-opus-5-5', '--system-prompt-file', sysFile,
-      '--tools', hasImage ? 'Read' : '', '--max-turns', hasImage ? '4' : '2'];
-    if (hasImage) args.push('--allowedTools', 'Read');
+    // cada pedido é uma conversa NOVA e descartável (não acumula nada no Claude Code)
+    const tools = [hasImage && 'Read', web && 'WebSearch', web && 'WebFetch'].filter(Boolean);
+    const args = ['-p', '--output-format', 'json', '--no-session-persistence', '--model', s.claudeModel || 'claude-opus-5-5',
+      '--effort', s.claudeEffort || 'medium', '--system-prompt-file', sysFile,
+      '--tools', tools.join(','), '--max-turns', String(web ? 12 : hasImage ? 4 : 2)];
+    if (tools.length) args.push('--allowedTools', ...tools);
     // não herda o login de uma sessão do app (usa o login próprio do Claude Code)
     const env = {};
     for (const [k, v] of Object.entries(process.env)) if (!/^(CLAUDE|ANTHROPIC)/.test(k) && k !== 'CLAUDECODE') env[k] = v;
@@ -133,9 +136,9 @@ function claudeAvailable() {
 
 // ---------------- Claude (API) ----------------
 /** content: string ou blocos (texto/imagem). Devolve só o texto final. */
-async function claudeAsk(system, content, { maxTokens = 16000 } = {}) {
+async function claudeAsk(system, content, { maxTokens = 16000, web = false } = {}) {
   const s = config.load().settings;
-  if (!s.anthropicKey) return claudeLocalAsk(system, content);
+  if (!s.anthropicKey) return claudeLocalAsk(system, content, { web });
   const stream = claude().beta.messages.stream({
     model: s.claudeModel || 'claude-opus-5-5',
     max_tokens: maxTokens,
@@ -179,12 +182,12 @@ async function brain(system, user, { json = false, maxTokens = 1500 } = {}) {
 }
 
 /** MOTOR de conteúdo — Claude, com DeepSeek de reserva */
-async function engineJSON(system, user, { maxTokens = 16000 } = {}) {
+async function engineJSON(system, user, { maxTokens = 16000, web = false } = {}) {
   const s = config.load().settings;
   const sys = system + '\nResponda SOMENTE com um objeto JSON válido, sem texto antes ou depois e sem ```.';
   if (claudeAvailable()) {
     try {
-      return extractJSON(await claudeAsk(sys, user, { maxTokens }));
+      return extractJSON(await claudeAsk(sys, user, { maxTokens, web }));
     } catch (e) {
       const msg = claudeErrorMessage(e);
       logger.warn('Claude falhou:', msg);
@@ -218,28 +221,80 @@ async function analyzeStyle(imagePath) {
 // ---------------- Google: só narração dos vídeos ----------------
 const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-/** Texto → PCM 16-bit 24kHz mono (Gemini TTS, versão grátis do AI Studio) */
+// As 30 vozes do Gemini TTS (iguais às do AI Studio). Todas falam português.
+const GOOGLE_VOICES = [
+  ['Zephyr', 'Feminina', 'Clara e animada'], ['Puck', 'Masculina', 'Animada'], ['Charon', 'Masculina', 'Informativa, de narrador'],
+  ['Kore', 'Feminina', 'Firme'], ['Fenrir', 'Masculina', 'Empolgada'], ['Leda', 'Feminina', 'Jovem'], ['Orus', 'Masculina', 'Firme'],
+  ['Aoede', 'Feminina', 'Leve'], ['Callirrhoe', 'Feminina', 'Tranquila'], ['Autonoe', 'Feminina', 'Clara'], ['Enceladus', 'Masculina', 'Sussurrada'],
+  ['Iapetus', 'Masculina', 'Clara'], ['Umbriel', 'Masculina', 'Tranquila'], ['Algieba', 'Masculina', 'Suave'], ['Despina', 'Feminina', 'Suave'],
+  ['Erinome', 'Feminina', 'Clara'], ['Algenib', 'Masculina', 'Rouca, grave'], ['Rasalgethi', 'Masculina', 'Informativa'], ['Laomedeia', 'Feminina', 'Animada'],
+  ['Achernar', 'Feminina', 'Macia'], ['Alnilam', 'Masculina', 'Firme'], ['Schedar', 'Masculina', 'Equilibrada'], ['Gacrux', 'Feminina', 'Madura'],
+  ['Pulcherrima', 'Feminina', 'Direta'], ['Achird', 'Masculina', 'Amigável'], ['Zubenelgenubi', 'Masculina', 'Descontraída'], ['Vindemiatrix', 'Feminina', 'Gentil'],
+  ['Sadachbia', 'Masculina', 'Vibrante'], ['Sadaltager', 'Masculina', 'De especialista'], ['Sulafat', 'Feminina', 'Calorosa'],
+].map(([name, gender, desc]) => ({ name, gender, desc }));
+
+/** Lista de chaves do Google (até 5) + a antiga "googleKey" */
+function googleKeys() {
+  const s = config.load().settings;
+  const list = [...(Array.isArray(s.googleKeys) ? s.googleKeys : []), s.googleKey].map((k) => String(k || '').trim()).filter(Boolean);
+  return [...new Set(list)];
+}
+// chaves que esgotaram hoje: {chave: data} — a cota grátis do Google zera todo dia
+const exhausted = {};
+let googleIdx = 0;
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+function keyStatus() {
+  const t = todayKey();
+  return googleKeys().map((k, i) => ({ n: i + 1, key: k.slice(0, 4) + '••••' + k.slice(-4), exhausted: exhausted[k] === t }));
+}
+
+/** Texto → PCM 16-bit 24kHz mono (Gemini TTS). Se uma chave esgotar, passa para a próxima, em rodízio. */
 async function tts(text, voice = 'Kore', styleInstruction = '') {
   const s = config.load().settings;
-  if (!s.googleKey) throw new Error('Chave do Google AI Studio não configurada (usada para narrar os vídeos)');
+  const keys = googleKeys();
+  if (!keys.length) throw new Error('Nenhuma chave do Google AI Studio configurada (usada para narrar os vídeos)');
   const pcms = [];
   for (const chunk of splitText(text, 3500)) {
-    const res = await fetchRetry(`${GEMINI}/${s.geminiTtsModel}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.googleKey },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: styleInstruction ? `${styleInstruction}\n\n${chunk}` : chunk }] }],
-        generationConfig: {
-          responseModalities: ['AUDIO'],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || 'Kore' } } },
-        },
-      }),
-    }, { timeoutMs: 300000, tries: 4 });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(`Google TTS ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
-    const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
-    if (!part) throw new Error('Google TTS não devolveu áudio');
-    pcms.push(Buffer.from(part.inlineData.data, 'base64'));
+    let lastErr = null;
+    let done = false;
+    for (let tries = 0; tries < keys.length * 2 && !done; tries++) {
+      const t = todayKey();
+      // procura a próxima chave que ainda tem cota hoje
+      let k = null;
+      for (let i = 0; i < keys.length; i++) {
+        const cand = keys[(googleIdx + i) % keys.length];
+        if (exhausted[cand] !== t) { k = cand; googleIdx = (googleIdx + i) % keys.length; break; }
+      }
+      if (!k) break;
+      const res = await fetchRetry(`${GEMINI}/${s.geminiTtsModel}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: styleInstruction ? `${styleInstruction}\n\n${chunk}` : chunk }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || 'Kore' } } },
+          },
+        }),
+      }, { timeoutMs: 300000, tries: 2, retryOn: [500, 502, 503, 504] });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 429 || res.status === 403 || (res.status === 400 && /API key|API_KEY/i.test(JSON.stringify(data)))) {
+        const n = keys.indexOf(k) + 1;
+        const perMinute = res.status === 429 && /PerMinute|per minute/i.test(JSON.stringify(data));
+        logger.warn(`Google chave ${n}: ${perMinute ? 'limite por minuto' : 'sem cota/ inválida'} — tentando a próxima`);
+        if (!perMinute) exhausted[k] = t;
+        googleIdx = (googleIdx + 1) % keys.length;
+        lastErr = new Error(`Google TTS ${res.status} na chave ${n}`);
+        if (perMinute && keys.length === 1) await new Promise((r) => setTimeout(r, 30000));
+        continue;
+      }
+      if (!res.ok) throw new Error(`Google TTS ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+      const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+      if (!part) throw new Error('Google TTS não devolveu áudio');
+      pcms.push(Buffer.from(part.inlineData.data, 'base64'));
+      done = true;
+    }
+    if (!done) throw new Error('Todas as chaves do Google esgotaram a cota de hoje (429). ' + (lastErr ? lastErr.message : ''));
   }
   return Buffer.concat(pcms);
 }
@@ -276,4 +331,4 @@ function splitText(text, max) {
   return out;
 }
 
-module.exports = { brain, engineJSON, claudeAsk, claudeAvailable, claudeLocalPath, deepseekChat, analyzeStyle, tts, pcmToWav, splitText, claudeErrorMessage };
+module.exports = { GOOGLE_VOICES, googleKeys, keyStatus, brain, engineJSON, claudeAsk, claudeAvailable, claudeLocalPath, deepseekChat, analyzeStyle, tts, pcmToWav, splitText, claudeErrorMessage };

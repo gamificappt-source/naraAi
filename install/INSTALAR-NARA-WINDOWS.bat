@@ -108,7 +108,7 @@ Passo "Deixando o PC sempre ligado (sem suspender na tomada)"
 powercfg /change standby-timeout-ac 0
 powercfg /change hibernate-timeout-ac 0
 
-Passo "Liberando a porta 8080 no firewall (para o Atom S3R e o celular acessarem)"
+Passo "Liberando a porta 8080 no firewall (para o Atom S3R e outros aparelhos da casa acessarem)"
 if (-not (Get-NetFirewallRule -DisplayName 'Nara 8080' -ErrorAction SilentlyContinue)) {
   New-NetFirewallRule -DisplayName 'Nara 8080' -Direction Inbound -LocalPort 8080 -Protocol TCP -Action Allow -Profile Any | Out-Null
 }

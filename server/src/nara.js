@@ -6,6 +6,7 @@ const jobs = require('./jobs');
 const scheduler = require('./scheduler');
 const analytics = require('./analytics');
 const { nowInTz, addDays, extractJSON, logger } = require('./util');
+const { dateLine } = require('./ai/writer');
 
 const conversation = [];
 let lastAudio = null; // PCM 24kHz para o Atom S3R (se tiver alto-falante)
@@ -17,7 +18,7 @@ function remember(role, text) {
 }
 
 let speaking = Promise.resolve();
-/** Fala com a voz da Nara (grátis): no celular e/ou no Atom S3R */
+/** Fala com a voz da Nara (grátis): nas caixas de som do PC e/ou no Atom S3R */
 async function speak(text) {
   lastReply = text;
   remember('nara', text);
@@ -61,6 +62,37 @@ function profileOf(name) {
   const p = config.findProfileByName(name);
   if (!p) throw new Error(`não achei o perfil "${name}"`);
   return p;
+}
+
+// Campos de perfil que a Nara pode mudar conversando com você
+const EDITABLE = {
+  name: 'text', niche: 'text', audience: 'text', tone: 'text', avoid: 'text', language: 'text',
+  videoPrompt: 'text', carouselPrompt: 'text', captionPrompt: 'text', hashtags: 'text', endCardText: 'text',
+  voice: 'text', voiceStyle: 'text', videoStyle: 'text', videoFormat: 'text', imageSource: 'text',
+  videoSeconds: 'num', videosPerDay: 'num', carouselsPerDay: 'num', imagesPerDay: 'num', carouselSlides: 'num',
+  windowStart: 'text', windowEnd: 'text', customTimes: 'text', days: 'days',
+  autoPost: 'bool', enabled: 'bool', music: 'bool', endCard: 'bool', watermark: 'bool', learnFromResults: 'bool',
+  'youtube.enabled': 'bool', 'youtube.privacy': 'text', 'youtube.rules': 'text', 'youtube.madeForKids': 'bool',
+  'instagram.enabled': 'bool', 'instagram.rules': 'text', 'instagram.reels': 'bool', 'instagram.carousels': 'bool', 'instagram.images': 'bool',
+  'subtitle.font': 'text', 'subtitle.color': 'text', 'subtitle.highlight': 'text', 'subtitle.position': 'text', 'subtitle.wordsPerLine': 'num',
+};
+function applyFields(p, fields) {
+  const changed = [];
+  for (const [k, raw] of Object.entries(fields)) {
+    const kind = EDITABLE[k];
+    if (!kind) continue;
+    let v = raw;
+    if (kind === 'num') { v = Number(raw); if (!Number.isFinite(v)) continue; v = Math.max(0, Math.min(k === 'videoSeconds' ? 3600 : 50, v)); }
+    if (kind === 'bool') v = raw === true || raw === 'true' || raw === 1 || raw === 'sim';
+    if (kind === 'days') { if (!Array.isArray(raw)) continue; v = raw.map(Number).filter((d) => d >= 0 && d <= 6); }
+    if (kind === 'text') v = String(raw ?? '').slice(0, 8000);
+    const parts = k.split('.');
+    let obj = p;
+    for (const part of parts.slice(0, -1)) obj = obj[part] = obj[part] || {};
+    obj[parts[parts.length - 1]] = v;
+    changed.push(k);
+  }
+  return changed;
 }
 
 async function execute(a) {
@@ -107,6 +139,19 @@ async function execute(a) {
       config.save();
       return `${field}=${p[field]} em ${p.name}`;
     }
+    case 'update_profile': {
+      const p = profileOf(a.profile);
+      const changed = applyFields(p, a.fields || {});
+      config.save();
+      return changed.length ? `alterado em ${p.name}: ${changed.join(', ')}` : 'nada para alterar';
+    }
+    case 'create_profile': {
+      if (!a.name) throw new Error('falta o nome do novo perfil');
+      const p = config.upsertProfile({ name: String(a.name).slice(0, 60) });
+      applyFields(p, a.fields || {});
+      config.save();
+      return `perfil ${p.name} criado`;
+    }
     case 'refresh_stats':
       await analytics.snapshot();
       return 'estatísticas atualizadas';
@@ -126,12 +171,18 @@ async function command(text) {
   if (!withoutWake || /^(bom dia|boa tarde|boa noite|tudo bem|oi|ola|briefing|resumo)( \w+)?$/.test(withoutWake)) {
     return { reply: await briefing(), actions: [{ type: 'briefing' }] };
   }
-  const profiles = config.load().profiles.map((p) => ({ nome: p.name, instagram: p.instagram.username, nicho: p.niche, videosPorDia: p.videosPerDay, ativo: p.enabled }));
+  const profiles = config.load().profiles.map((p) => ({
+    nome: p.name, instagram: p.instagram.username, nicho: p.niche, publico: p.audience, tom: p.tone, ativo: p.enabled,
+    videosPorDia: p.videosPerDay, carrosseisPorDia: p.carouselsPerDay, segundosPorVideo: p.videoSeconds, formato: p.videoFormat,
+    voz: p.voice, tomDaVoz: p.voiceStyle, horario: `${p.windowStart}-${p.windowEnd}`, dias: p.days, postarSozinha: p.autoPost,
+    youtube: p.youtube.enabled, instagramAtivo: p.instagram.enabled,
+    promptDoVideo: (p.videoPrompt || '').slice(0, 300), promptDoCarrossel: (p.carouselPrompt || '').slice(0, 300),
+  }));
   let plan;
   try {
     plan = extractJSON(await llm.brain(
       'Você é a Nara, assistente que gerencia perfis de YouTube e Instagram. Interprete o pedido do dono e devolva ações. Responda em português do Brasil, frases curtas, sem emojis (será falado).',
-      `PERFIS: ${JSON.stringify(profiles)}\nAGENDA HOJE:\n${scheduleText()}\nRESUMO: ${JSON.stringify(analytics.summary())}\n\n` +
+      `${dateLine()}\nPERFIS: ${JSON.stringify(profiles)}\nAGENDA HOJE:\n${scheduleText()}\nRESUMO: ${JSON.stringify(analytics.summary())}\n\n` +
         `PEDIDO: "${text}"\n\nAções possíveis (use o nome exato do perfil):\n` +
         '- {"type":"extra_post","profile":"...","content":"video|carousel|image","topic":"opcional","count":1}\n' +
         '- {"type":"focus","profile":"...","days":7,"extra":1}  (mais vídeos por dia nesse perfil)\n' +
@@ -139,6 +190,11 @@ async function command(text) {
         '- {"type":"pause","profile":"... ou null para tudo"} / {"type":"resume","profile":"... ou null"}\n' +
         '- {"type":"add_topic","profile":"...","topic":"..."}\n' +
         '- {"type":"set_count","profile":"...","content":"video|carousel|image","per_day":2}\n' +
+        '- {"type":"update_profile","profile":"...","fields":{"campo":"valor"}}  (mudar qualquer configuração do perfil)\n' +
+        '- {"type":"create_profile","name":"...","fields":{...}}\n' +
+        `  Campos possíveis: ${Object.keys(EDITABLE).join(', ')}. videoSeconds em segundos (ex.: 3 minutos = 180). ` +
+        'days = dias da semana [0=domingo..6=sábado]. voice = uma voz do Google (Kore, Puck, Charon, Zephyr, Fenrir, Leda, Orus, Aoede...). ' +
+        'Para mudar o prompt, mande o texto completo novo.\n' +
         '- {"type":"refresh_stats"}\n' +
         '- {"type":"briefing"}\n' +
         'Se for só uma pergunta, responda sem ações. JSON: {"actions":[...], "reply":"o que você vai falar para o dono"}',
@@ -171,9 +227,9 @@ async function voice(wav, { requireWake = true } = {}) {
     text = null;
   }
   if (text == null) {
-    // sem chave Groq: quando você aperta o botão, quem escuta é o microfone do celular
-    if (!requireWake) listenOnPhone();
-    return { heard: '', reply: '', phoneListening: !requireWake };
+    // sem chave Groq a Nara não consegue entender o áudio do Atom
+    if (!requireWake) return { heard: '', reply: await speak('Para eu te ouvir pelo Atom, coloque a chave da Groq na página, em Ajustes.') };
+    return { heard: '', reply: '' };
   }
   logger.info('Ouvi:', text);
   if (!text || /^\W*$/.test(text)) return { heard: '', reply: '' };
@@ -184,23 +240,12 @@ async function voice(wav, { requireWake = true } = {}) {
   return { heard: text, ...r };
 }
 
-/** Usa o microfone do próprio celular (reconhecimento de voz do Android, grátis) */
-async function listenOnPhone() {
-  await speaking;
-  const text = await voiceIO.listenOnPhone();
-  return text ? command(text) : null;
-}
-
 async function wake() {
-  const reply = await briefing();
-  if (config.load().settings.nara.listenOnPhoneAfterWake) {
-    speaking.then(() => listenOnPhone()).catch(() => {});
-  }
-  return { reply };
+  return { reply: await briefing() };
 }
 
 module.exports = {
-  briefing, command, voice, wake, speak, listenOnPhone,
+  briefing, command, voice, wake, speak,
   conversation: () => conversation,
   lastAudio: () => lastAudio,
   lastReply: () => lastReply,

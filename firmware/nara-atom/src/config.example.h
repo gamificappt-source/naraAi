@@ -5,7 +5,7 @@
 #define WIFI_SSID      "NOME_DO_SEU_WIFI"
 #define WIFI_PASSWORD  "SENHA_DO_WIFI"
 
-// Endereço do celular na rede (aparece na página da Nara, aba Sistema)
+// Endereço do PC da Nara na rede (aparece na página da Nara, aba Nara)
 // Ex.: "http://192.168.0.15:8080"
 #define NARA_SERVER    "http://192.168.0.15:8080"
 

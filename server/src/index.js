@@ -1,4 +1,4 @@
-// Nara — servidor principal (roda 24h no Termux)
+// Nara — servidor principal (roda 24h neste PC; a página pode ficar fechada)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -13,9 +13,10 @@ const voice = require('./ai/voice');
 const youtube = require('./publish/youtube');
 const instagram = require('./publish/instagram');
 const { DATA_DIR, WEB_DIR, logger, nowInTz, uid } = require('./util');
+const { FONTS_DIR } = require('./media/render');
 
 const PORT = Number(process.env.PORT) || 8080;
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+const MIME = { '.ttf': 'font/ttf', '.otf': 'font/otf', '.woff2': 'font/woff2', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 
 function send(res, code, body, headers = {}) {
   const isBuf = Buffer.isBuffer(body);
@@ -103,6 +104,11 @@ async function route(req, res) {
   // ---------- páginas ----------
   if (m === 'GET' && (p === '/' || p === '/index.html')) return serveFile(res, path.join(WEB_DIR, 'index.html'), req);
   if (m === 'GET' && p === '/api/ping') return send(res, 200, { ok: true, name: 'Nara' });
+  // fontes da página (Anton, Bebas, Poppins...) — mesmas das legendas
+  if (m === 'GET' && p.startsWith('/assets/fonts/')) {
+    const file = path.join(FONTS_DIR, path.basename(decodeURIComponent(p)));
+    return serveFile(res, file, req);
+  }
 
   if (m === 'GET' && p === '/oauth/youtube/callback') {
     try {
@@ -169,6 +175,50 @@ async function route(req, res) {
   if ((mm = p.match(/^\/api\/profiles\/([\w-]+)$/)) && m === 'DELETE') {
     config.deleteProfile(mm[1]);
     return send(res, 200, { ok: true });
+  }
+  // capa, logo, referência do vídeo e referência do carrossel
+  if ((mm = p.match(/^\/api\/profiles\/([\w-]+)\/image$/)) && m === 'POST') {
+    const b = await json(req);
+    const prof = config.getProfile(mm[1]);
+    if (!prof) return send(res, 404, { error: 'perfil não encontrado' });
+    const field = { cover: 'coverImage', logo: 'logoImage', reference: 'referenceImage', carousel: 'carouselReference' }[b.kind];
+    if (!field) return send(res, 400, { error: 'tipo de imagem inválido' });
+    const analysisField = { reference: 'styleAnalysis', carousel: 'carouselStyleAnalysis' }[b.kind];
+    if (!b.dataUrl) {
+      prof[field] = '';
+      if (analysisField) prof[analysisField] = '';
+      config.save();
+      return send(res, 200, { ok: true });
+    }
+    const match = String(b.dataUrl).match(/^data:image\/(png|jpe?g|webp);base64,(.+)$/);
+    if (!match) return send(res, 400, { error: 'Envie uma imagem PNG, JPG ou WEBP' });
+    const name = `${prof.id}_${b.kind}_${uid()}.${match[1].replace('jpeg', 'jpg')}`;
+    fs.writeFileSync(path.join(jobs.REFS_DIR, name), Buffer.from(match[2], 'base64'));
+    const old = prof[field];
+    if (old && old !== name) fs.rmSync(path.join(jobs.REFS_DIR, old), { force: true });
+    prof[field] = name;
+    if (analysisField) prof[analysisField] = '';
+    config.save();
+    if (!analysisField) return send(res, 200, { ok: true, file: name });
+    try {
+      const st = await llm.analyzeStyle(path.join(jobs.REFS_DIR, name));
+      prof[analysisField] = (st.style_prompt || '') + (st.mood ? ` (clima: ${st.mood})` : '');
+      config.save();
+      return send(res, 200, { ok: true, file: name, analysis: prof[analysisField], palette: st.palette || [] });
+    } catch (e) {
+      return send(res, 200, { ok: true, file: name, analysis: '', warning: 'Imagem salva. A análise do estilo será feita na próxima produção: ' + e.message });
+    }
+  }
+  if (m === 'GET' && p === '/api/voices') {
+    return send(res, 200, { google: llm.GOOGLE_VOICES, nara: voice.NARA_VOICES });
+  }
+  if (m === 'GET' && p === '/api/google/status') return send(res, 200, { keys: llm.keyStatus() });
+  // amostra da voz de narração (gasta um pouquinho da cota do Google)
+  if (m === 'POST' && p === '/api/voice/preview') {
+    const b = await json(req);
+    const text = String(b.text || 'Olá! Esta é a voz que vai narrar os vídeos deste perfil.').slice(0, 300);
+    const pcm = await llm.tts(text, b.voice || 'Kore', String(b.style || '').slice(0, 500));
+    return send(res, 200, llm.pcmToWav(pcm), { 'Content-Type': 'audio/wav' });
   }
   if ((mm = p.match(/^\/api\/profiles\/([\w-]+)\/reference$/)) && m === 'POST') {
     const b = await json(req);
@@ -240,7 +290,14 @@ async function route(req, res) {
     };
     await t('DeepSeek (cérebro)', s.deepseekKey, () => llm.deepseekChat([{ role: 'user', content: 'Responda só: ok' }], { maxTokens: 5 }));
     await t(s.anthropicKey ? 'Claude (motor, chave API)' : 'Claude (motor, assinatura neste PC)', llm.claudeAvailable(), () => llm.claudeAsk('Responda curto.', 'Responda só: ok', { maxTokens: 2000 }));
-    await t('Google (narração)', s.googleKey, () => llm.tts('Olá, teste de narração.', 'Kore'));
+    const gk = llm.googleKeys();
+    if (!gk.length) out['Google (narração)'] = 'não configurada';
+    for (let i = 0; i < gk.length; i++) {
+      await t(`Google chave ${i + 1} (narração)`, true, async () => {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1', { headers: { 'x-goog-api-key': gk[i] } });
+        if (!r.ok) throw new Error('chave inválida (' + r.status + ')');
+      });
+    }
     await t('Voz da Nara (grátis)', true, async () => { if (!(await voice.synth('Olá, eu sou a Nara.'))) throw new Error('sem voz — rode de novo o instalador'); });
     await t('Groq (ouvir o Atom)', s.groqKey, async () => { const r = await voice.transcribe(llm.pcmToWav(Buffer.alloc(32000))); if (r == null) throw new Error('sem chave'); });
     return send(res, 200, out);
@@ -265,6 +322,7 @@ const server = http.createServer((req, res) => {
 
 // ---------- tarefas diárias ----------
 scheduler.daily('estatisticas-manha', '06:30', () => analytics.snapshot());
+scheduler.daily('estatisticas-tarde', '14:30', () => analytics.snapshot(), 120);
 scheduler.daily('estatisticas-noite', '23:45', () => analytics.snapshot(), 14);
 scheduler.daily('limpeza', '03:10', () => jobs.cleanup());
 scheduler.daily('token-instagram', '04:20', async () => {
@@ -279,8 +337,8 @@ server.listen(PORT, '0.0.0.0', () => {
   const s = config.load().settings;
   logger.info('==============================================');
   logger.info(` NARA rodando na porta ${PORT}`);
-  logger.info(` No celular:   http://localhost:${PORT}`);
-  for (const a of lanAddresses()) logger.info(` Na rede/PC:   http://${a}:${PORT}`);
+  logger.info(` Neste PC:     http://localhost:${PORT}`);
+  for (const a of lanAddresses()) logger.info(` Na rede:      http://${a}:${PORT}`);
   logger.info(` Senha da página: ${s.adminToken}`);
   logger.info(` Token do Atom S3R: ${s.deviceToken}`);
   logger.info('==============================================');

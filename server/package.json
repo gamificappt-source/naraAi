@@ -1,7 +1,7 @@
 {
   "name": "nara-server",
   "version": "1.0.0",
-  "description": "Nara - assistente que cria e posta conteúdo no YouTube e Instagram (roda no Termux)",
+  "description": "Nara - assistente que cria e posta conteúdo no YouTube e Instagram (roda 24h num PC Windows)",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {

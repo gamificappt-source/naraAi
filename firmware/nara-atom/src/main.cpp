@@ -5,8 +5,8 @@
 //  - Segure o botão 1s: briefing do dia ("Nara, bom dia").
 //  - Escuta contínua (opcional): fale "Nara, bom dia" / "Nara, posta um vídeo extra…"
 //  - Primeira vez (ou botão apertado ao ligar): cria a rede Wi-Fi "Nara-Setup"
-//    para você digitar Wi-Fi, endereço da Nara e token pelo celular.
-//  A voz da resposta sai pelo celular e/ou pelo alto-falante da base.
+//    para você digitar Wi-Fi, endereço da Nara e token (pelo celular ou PC).
+//  A voz da resposta sai pelas caixas de som do PC e/ou pelo alto-falante da base.
 // =============================================================
 #include <M5Unified.h>
 #include <WiFi.h>

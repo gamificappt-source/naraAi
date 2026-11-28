@@ -14,21 +14,23 @@ const DEFAULT_SETTINGS = {
   anthropicKey: '', // MOTOR: roteiros, carrosséis, temas, análise de estilo
   claudeModel: 'claude-opus-5-5',
   claudeEffort: 'medium', // low | medium | high (mais alto = melhor e mais caro)
-  googleKey: '', // só para NARRAR os vídeos
+  googleKey: '', // (antiga) chave única do Google — continua valendo
+  googleKeys: ['', '', '', '', ''], // até 5 chaves do Google AI Studio: se uma esgotar, usa a próxima
   geminiTtsModel: 'gemini-2.5-flash-preview-tts',
   groqKey: '', // opcional: entender a fala do Atom S3R (grátis)
   pexelsKey: '', // opcional: mais imagens/fotos grátis
   youtubeClientId: '',
   youtubeClientSecret: '',
   publicUrl: '', // ex.: http://100.x.x.x:8080 (Tailscale) — só informativo
+  webTrends: true, // a Claude pesquisa na internet o que está em alta antes de escolher o tema
   paused: false, // pausa geral
   nara: {
     wakeWord: 'nara',
     voice: 'pt-BR-ThalitaMultilingualNeural', // voz grátis (Edge TTS)
-    speakOnPhone: true, // fala pelo alto-falante do celular
+    speakOnPhone: true, // fala pelas caixas de som do PC (nome antigo mantido)
     speakOnDevice: false, // manda áudio para o Atom (se tiver alto-falante)
     briefingTime: '', // ex.: 07:30 → briefing automático (vazio = só quando pedir)
-    listenOnPhoneAfterWake: true, // depois do "bom dia" escuta comando pelo microfone do celular
+    listenOnPhoneAfterWake: false, // (não usado no PC)
   },
   render: {
     quality: '1080', // 1080 ou 720
@@ -54,7 +56,7 @@ const DEFAULT_PROFILE = () => ({
   windowEnd: '21:00',
   customTimes: '', // "09:00, 18:30" sobrescreve a distribuição automática
   videoFormat: 'short', // short (9:16) | long (16:9)
-  videoSeconds: 50,
+  videoSeconds: 50, // duração de cada vídeo em segundos (a página mostra em minutos)
   videoStyle: '2d', // 2d | 3d | realista | documentario | anime | minimalista
   imageSource: 'mix', // web | ai | mix
   videoPrompt: '', // o "prompt do vídeo" que você já usa hoje
@@ -72,18 +74,27 @@ const DEFAULT_PROFILE = () => ({
     wordsPerLine: 3,
   },
   palette: ['#0B0F1A', '#E63946', '#F1FAEE'],
+  coverImage: '', // capa do perfil (biblioteca)
+  logoImage: '', // logo do canal (chamada final dos vídeos)
+  endCard: true, // mostra a logo no final do vídeo
+  watermark: false, // logo pequena no canto durante o vídeo
+  endCardText: 'Siga para mais!',
   referenceImage: '', // arquivo salvo em data/refs
   styleAnalysis: '', // descrição do estilo gerada pelo Gemini a partir da referência
   // Carrossel / imagem
   carouselSlides: 6,
   carouselPrompt: '',
   carouselFont: 'Poppins',
+  carouselReference: '', // imagem de referência só do carrossel
+  carouselStyleAnalysis: '',
   // Legenda / post
   captionPrompt: 'Legenda curta, com gancho na primeira linha e chamada para seguir o perfil.',
   hashtags: '',
   autoPost: true, // false = fica aguardando sua aprovação na página
-  youtube: { enabled: false, privacy: 'public', refreshToken: '', channelTitle: '', channelId: '' },
-  instagram: { enabled: false, userId: '', accessToken: '', username: '', tokenRefreshedAt: '' },
+  days: [0, 1, 2, 3, 4, 5, 6], // dias da semana em que posta (0 = domingo)
+  learnFromResults: true, // segue os assuntos que dão mais engajamento
+  youtube: { enabled: false, privacy: 'public', categoryId: '24', madeForKids: false, rules: '', refreshToken: '', channelTitle: '', channelId: '' },
+  instagram: { enabled: false, reels: true, carousels: true, images: true, shareToFeed: true, rules: '', userId: '', accessToken: '', username: '', tokenRefreshedAt: '' },
   boost: { extraVideos: 0, until: '' }, // "Nara, foca no perfil X"
 });
 
@@ -134,6 +145,7 @@ function publicView() {
   const c = load();
   const s = structuredClone(c.settings);
   for (const f of SECRET_FIELDS) s[f] = mask(s[f]);
+  s.googleKeys = (s.googleKeys || []).map(mask);
   delete s.adminToken;
   const profiles = c.profiles.map((p) => {
     const q = structuredClone(p);
@@ -151,6 +163,13 @@ function updateSettings(patch) {
     if (typeof patch[f] === 'string' && patch[f].includes('••')) delete patch[f];
   }
   delete patch.adminToken;
+  if (Array.isArray(patch.googleKeys)) {
+    const old = c.settings.googleKeys || [];
+    patch.googleKeys = patch.googleKeys.slice(0, 5).map((k, i) => (String(k || '').includes('••') ? old[i] || '' : String(k || '').trim()));
+    while (patch.googleKeys.length < 5) patch.googleKeys.push('');
+    c.settings.googleKeys = patch.googleKeys;
+    delete patch.googleKeys;
+  }
   if (patch.newAdminToken) {
     c.settings.adminToken = String(patch.newAdminToken).trim();
     delete patch.newAdminToken;
@@ -170,8 +189,11 @@ function upsertProfile(p) {
     c.profiles.push(existing);
   }
   const oldRef = existing.referenceImage;
+  const oldCar = existing.carouselReference;
   deepMerge(existing, p);
   if (Array.isArray(p.topics)) existing.topics = p.topics;
+  if (Array.isArray(p.days)) existing.days = p.days.map(Number);
+  if (existing.carouselReference !== oldCar) existing.carouselStyleAnalysis = '';
   if (Array.isArray(p.palette)) existing.palette = p.palette;
   if (existing.referenceImage !== oldRef) existing.styleAnalysis = '';
   save();

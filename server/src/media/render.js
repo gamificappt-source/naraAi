@@ -116,17 +116,19 @@ function pickMusic(profileId) {
  * Renderiza o vídeo final.
  * scenes: [{text, image}], audio: wav da narração
  */
-async function renderVideo({ dir, scenes, audio, narration, profile }) {
+async function renderVideo({ dir, scenes, audio, narration, profile, logo = null }) {
   const [W, H] = dims(profile.videoFormat);
   const fps = Number(config.load().settings.render.fps) || 30;
   const total = await duration(audio);
+  // chamada final com a logo do canal: +3 s depois da narração
+  const endDur = logo && profile.endCard !== false ? 3 : 0;
   const lens = scenes.map((s) => Math.max(10, (s.text || '').length));
   const sum = lens.reduce((a, b) => a + b, 0);
   const clipList = [];
   const bg = (profile.palette && profile.palette[0]) || '#111111';
 
   for (let i = 0; i < scenes.length; i++) {
-    const d = Math.max(1.5, (lens[i] / sum) * total + (i === scenes.length - 1 ? 0.6 : 0));
+    const d = Math.max(1.5, (lens[i] / sum) * total + (i === scenes.length - 1 ? 0.6 + endDur : 0));
     const frames = Math.ceil(d * fps);
     const out = path.join(dir, `clip_${String(i).padStart(2, '0')}.mp4`);
     const zoomIn = i % 2 === 0;
@@ -147,18 +149,57 @@ async function renderVideo({ dir, scenes, audio, narration, profile }) {
   fs.writeFileSync(path.join(dir, 'clips.txt'), clipList.map((c) => `file '${path.basename(c)}'`).join('\n'));
   await run('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', 'clips.txt', '-c', 'copy', 'visual.mp4'], { cwd: dir });
 
-  fs.writeFileSync(path.join(dir, 'subs.ass'), buildSubtitles(narration, total, profile.subtitle || {}, W, H));
+  let subs = buildSubtitles(narration, total, profile.subtitle || {}, W, H);
+  const endT = total + 0.15;
+  if (endDur && profile.endCardText) {
+    const sc = H > W ? W / 1080 : H / 1080;
+    const st = profile.subtitle || {};
+    const endStyle = `Style: End,${st.font || 'Anton'},${Math.round(64 * sc)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,1,0,1,${Math.max(2, Math.round(4 * sc))},0,2,60,60,${Math.round(H * 0.2)},1`;
+    subs = subs.replace('\n\n[Events]', `\n${endStyle}\n\n[Events]`);
+    subs += `Dialogue: 1,${assTime(endT + 0.3)},${assTime(endT + endDur)},End,,0,0,0,,{\\fad(300,0)}${assEscape(profile.endCardText)}\n`;
+  }
+  fs.writeFileSync(path.join(dir, 'subs.ass'), subs);
 
   const music = profile.music ? pickMusic(profile.id) : null;
   const args = ['-y', '-loglevel', 'error', '-i', 'visual.mp4', '-i', path.basename(audio)];
-  let filter = `[0:v]subtitles=subs.ass:fontsdir=${fontsRel(dir)}[v]`;
-  let amap = '1:a';
+  let next = 2;
+  const parts = [];
+  let v = '[0:v]';
+  if (endDur) {
+    parts.push(`${v}drawbox=x=0:y=0:w=iw:h=ih:color=black@0.6:t=fill:enable='gte(t,${endT.toFixed(2)})'[dk]`);
+    v = '[dk]';
+  }
+  parts.push(`${v}subtitles=subs.ass:fontsdir=${fontsRel(dir)}[sv]`);
+  v = '[sv]';
+  if (logo && profile.watermark) {
+    args.push('-loop', '1', '-i', logo);
+    const li = next++;
+    const m = Math.round(W * 0.04);
+    parts.push(`[${li}:v]scale=${Math.round(Math.min(W, H) * 0.16)}:-1,format=rgba,colorchannelmixer=aa=0.7[wm]`);
+    parts.push(`${v}[wm]overlay=W-w-${m}:${m}:shortest=1:enable='lt(t,${endT.toFixed(2)})'[wv]`);
+    v = '[wv]';
+  }
+  if (endDur) {
+    args.push('-loop', '1', '-i', logo);
+    const li = next++;
+    parts.push(`[${li}:v]scale=${Math.round(Math.min(W, H) * 0.42)}:-1,format=rgba,fade=t=in:st=${endT.toFixed(2)}:d=0.5:alpha=1[lg]`);
+    parts.push(`${v}[lg]overlay=(W-w)/2:(H-h)/2-H*0.04:shortest=1:enable='gte(t,${endT.toFixed(2)})'[ev]`);
+    v = '[ev]';
+  }
+  let a = '[1:a]';
+  if (endDur) {
+    parts.push(`${a}apad=pad_dur=${endDur + 0.5}[na]`);
+    a = '[na]';
+  }
   if (music) {
     args.push('-stream_loop', '-1', '-i', music);
-    filter += `;[2:a]volume=0.10[m];[1:a][m]amix=inputs=2:duration=first:dropout_transition=0[a]`;
-    amap = '[a]';
+    const mi = next++;
+    parts.push(`[${mi}:a]volume=0.10[m];${a}[m]amix=inputs=2:duration=first:dropout_transition=0[a]`);
+    a = '[a]';
   }
-  args.push('-filter_complex', filter, '-map', '[v]', '-map', amap, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
+  const filter = parts.join(';');
+  const amap = a === '[1:a]' ? '1:a' : a;
+  args.push('-filter_complex', filter, '-map', v, '-map', amap, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
     '-c:a', 'aac', '-b:a', '160k', '-ar', '44100', '-shortest', '-movflags', '+faststart', 'final.mp4');
   await run('ffmpeg', args, { cwd: dir });
   // limpa intermediários

@@ -1,6 +1,6 @@
 // Voz da própria Nara (grátis) e transcrição do que você fala para o Atom S3R
-//  Falar:  Microsoft Edge TTS (edge-tts, vozes neurais grátis) → Google Tradutor (reserva) → voz do Android (última reserva)
-//  Ouvir:  Groq Whisper (grátis, com chave) ou o reconhecimento de voz do próprio celular (Termux:API)
+//  Falar:  Microsoft Edge TTS (edge-tts, vozes neurais grátis) → Google Tradutor (reserva)
+//  Ouvir:  Groq Whisper (grátis, com chave) — o que você fala para o Atom S3R
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
@@ -8,8 +8,18 @@ const { run, commandExists, fetchRetry, DATA_DIR, ensureDir, logger } = require(
 
 const VOICE_DIR = ensureDir(path.join(DATA_DIR, 'voice'));
 
+// Vozes grátis da própria Nara (Edge TTS) que falam português do Brasil
+const NARA_VOICES = [
+  { name: 'pt-BR-ThalitaMultilingualNeural', label: 'Thalita', gender: 'Feminina', desc: 'Natural e expressiva' },
+  { name: 'pt-BR-FranciscaNeural', label: 'Francisca', gender: 'Feminina', desc: 'Clara e calma' },
+  { name: 'pt-BR-AntonioNeural', label: 'Antônio', gender: 'Masculina', desc: 'Firme e amigável' },
+];
+
 async function edgeTts(text, voice, out) {
+  const n = config.load().settings.nara || {};
   const args = ['--voice', voice, '--text', text, '--write-media', out];
+  if (/^[+-]\d+%$/.test(n.rate || '')) args.push(`--rate=${n.rate}`);
+  if (/^[+-]\d+Hz$/.test(n.pitch || '')) args.push(`--pitch=${n.pitch}`);
   if (process.env.HTTPS_PROXY) args.push('--proxy', process.env.HTTPS_PROXY);
   await run('edge-tts', args);
   if (!fs.existsSync(out) || fs.statSync(out).size < 1000) throw new Error('edge-tts não gerou áudio');
@@ -33,6 +43,15 @@ async function googleTranslateTts(text, out) {
   fs.writeFileSync(out, Buffer.concat(bufs));
 }
 
+// lembra quais programas existem (evita procurar a cada fala = resposta mais rápida)
+const found = {};
+async function has(cmd) {
+  if (found[cmd] && Date.now() - found[cmd].at < 10 * 60 * 1000) return found[cmd].ok;
+  const ok = await commandExists(cmd);
+  found[cmd] = { ok, at: Date.now() };
+  return ok;
+}
+
 /** Gera um MP3 com a voz da Nara. Devolve o caminho ou null. */
 async function synth(text) {
   const voice = config.load().settings.nara.voice || 'pt-BR-ThalitaMultilingualNeural';
@@ -43,7 +62,7 @@ async function synth(text) {
     if (Date.now() - fs.statSync(fp).mtimeMs > 3600000) fs.rmSync(fp, { force: true });
   }
   try {
-    if (await commandExists('edge-tts')) {
+    if (await has('edge-tts')) {
       await edgeTts(text, voice, out);
       return out;
     }
@@ -68,22 +87,9 @@ async function audioSeconds(file) {
   }
 }
 
-/** Toca no alto-falante do celular (ou no Bluetooth/HDMI conectado) */
-async function playOnPhone(file, text) {
-  if (file && (await commandExists('termux-media-player'))) {
-    await run('termux-media-player', ['play', file]);
-    const secs = await audioSeconds(file);
-    await new Promise((r) => setTimeout(r, secs * 1000 + 600));
-    return;
-  }
-  if (file && (await commandExists('ffplay'))) {
-    // PC (Windows/Linux/Mac): toca nas caixas de som
-    await run('ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet', file]);
-    return;
-  }
-  if (await commandExists('termux-tts-speak')) {
-    await run('termux-tts-speak', ['-l', 'pt', '-r', '1.05', text]);
-  }
+/** Toca nas caixas de som do PC (ffplay vem junto com o ffmpeg) */
+async function playOnPhone(file) {
+  if (file && (await has('ffplay'))) await run('ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet', file]);
 }
 
 /** Converte para PCM 16-bit 24kHz mono (o que o Atom S3R toca) */
@@ -110,16 +116,4 @@ async function transcribe(wav) {
   return (d.text || '').trim();
 }
 
-/** Escuta pelo microfone do celular (reconhecimento de voz do Android, grátis) */
-async function listenOnPhone() {
-  if (!(await commandExists('termux-speech-to-text'))) return null;
-  try {
-    const out = await run('termux-speech-to-text', []);
-    return out.trim().split('\n').pop() || null;
-  } catch (e) {
-    logger.warn('Microfone do celular:', e.message);
-    return null;
-  }
-}
-
-module.exports = { synth, playOnPhone, toPcm, transcribe, listenOnPhone };
+module.exports = { NARA_VOICES, synth, playOnPhone, toPcm, transcribe, audioSeconds };

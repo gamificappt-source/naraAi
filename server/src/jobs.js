@@ -15,7 +15,7 @@ const JOBS_DIR = ensureDir(path.join(DATA_DIR, 'jobs'));
 const REFS_DIR = ensureDir(path.join(DATA_DIR, 'refs'));
 
 let jobs = readJSON(JOBS_FILE, []);
-// se o celular reiniciou no meio de uma produção, recomeça
+// se o PC reiniciou no meio de uma produção, recomeça
 for (const j of jobs) if (j.status === 'producing' || j.status === 'publishing') j.status = j.files && j.files.length && j.status === 'publishing' ? 'ready' : 'queued';
 let busy = false;
 
@@ -52,19 +52,28 @@ function step(job, msg) {
 }
 
 async function ensureStyle(p) {
-  if (!p.referenceImage || p.styleAnalysis) return;
-  const file = path.join(REFS_DIR, p.referenceImage);
-  if (!fs.existsSync(file)) return;
-  try {
-    const st = await llm.analyzeStyle(file);
-    p.styleAnalysis = st.style_prompt || '';
-    if (st.mood) p.styleAnalysis += ` (clima: ${st.mood})`;
-    if ((!p.palette || !p.palette.length) && Array.isArray(st.palette)) p.palette = st.palette.slice(0, 3);
-    config.save();
-    logger.info(`Estilo da referência analisado para ${p.name}`);
-  } catch (e) {
-    logger.warn('Não consegui analisar a imagem de referência:', e.message);
+  for (const [img, field] of [['referenceImage', 'styleAnalysis'], ['carouselReference', 'carouselStyleAnalysis']]) {
+    if (!p[img] || p[field]) continue;
+    const file = path.join(REFS_DIR, p[img]);
+    if (!fs.existsSync(file)) continue;
+    try {
+      const st = await llm.analyzeStyle(file);
+      p[field] = (st.style_prompt || '') + (st.mood ? ` (clima: ${st.mood})` : '');
+      if (field === 'styleAnalysis' && (!p.palette || !p.palette.length) && Array.isArray(st.palette)) p.palette = st.palette.slice(0, 3);
+      config.save();
+      logger.info(`Estilo da referência (${img}) analisado para ${p.name}`);
+    } catch (e) {
+      logger.warn('Não consegui analisar a imagem de referência:', e.message);
+    }
   }
+}
+
+/** Posts deste perfil com métricas (últimos 60 dias) — a IA segue o que engaja mais */
+function performance(profileId) {
+  const since = Date.now() - 60 * 86400000;
+  return jobs
+    .filter((j) => j.profileId === profileId && j.status === 'done' && j.metrics && j.postedAt && new Date(j.postedAt).getTime() > since)
+    .map((j) => ({ title: j.title, topic: j.topic, type: j.type, metrics: j.metrics }));
 }
 
 function history() {
@@ -103,7 +112,8 @@ async function produceVideo(job, p) {
   }
 
   step(job, 'Montando o vídeo (ffmpeg)…');
-  const file = await render.renderVideo({ dir, scenes, audio, narration, profile: p });
+  const logo = p.logoImage && fs.existsSync(path.join(REFS_DIR, p.logoImage)) ? path.join(REFS_DIR, p.logoImage) : null;
+  const file = await render.renderVideo({ dir, scenes, audio, narration, profile: p, logo });
   job.files = [path.relative(DATA_DIR, file)];
   job.caption = captionFor(p, script);
   job.description = `${script.description || ''}\n\n${(script.hashtags || []).join(' ')}`;
@@ -122,7 +132,7 @@ async function produceImages(job, p) {
   for (let i = 0; i < slides.length; i++) {
     step(job, `Criando imagem ${i + 1}/${slides.length}…`);
     const img = await images.getImage({
-      search: slides[i].search, visual: slides[i].visual, styleHint: p.styleAnalysis || writer.STYLE_LABEL[p.videoStyle],
+      search: slides[i].search, visual: slides[i].visual, styleHint: p.carouselStyleAnalysis || p.styleAnalysis || writer.STYLE_LABEL[p.videoStyle],
       source: p.imageSource, orientation: 'portrait', dest: path.join(dir, `bg_${i}.jpg`), index: i,
     });
     files.push(await render.renderSlide({ dir, index: i, total: slides.length, slide: slides[i], image: img, profile: p, handle: p.instagram.username }));
@@ -145,13 +155,13 @@ async function publishJob(job) {
         job.results.youtube = await youtube.uploadVideo(p, files[0], { title: job.title, description: job.description, tags: job.script.hashtags || [] });
       } catch (e) { errors.push('YouTube: ' + e.message); }
     }
-    if (p.instagram.enabled && !job.results.instagram) {
+    if (p.instagram.enabled && p.instagram.reels !== false && !job.results.instagram) {
       try {
         step(job, 'Postando Reels no Instagram…');
         job.results.instagram = await instagram.postReel(p, files[0], job.caption);
       } catch (e) { errors.push('Instagram: ' + e.message); }
     }
-  } else if (p.instagram.enabled && !job.results.instagram) {
+  } else if (p.instagram.enabled && p.instagram[job.type === 'image' ? 'images' : 'carousels'] !== false && !job.results.instagram) {
     try {
       step(job, 'Postando no Instagram…');
       job.results.instagram = await instagram.postImages(p, files, job.caption);
@@ -182,7 +192,7 @@ async function runJob(job) {
       config.save();
     } else {
       step(job, 'Pesquisando tema…');
-      job.topic = await writer.pickTopic(p, history(), job.type === 'video' ? 'video' : 'carousel');
+      job.topic = await writer.pickTopic(p, history(), job.type === 'video' ? 'video' : 'carousel', performance(p.id));
     }
   }
   step(job, 'Tema: ' + job.topic);
@@ -243,7 +253,7 @@ function remove(id) {
   persist();
 }
 
-/** Apaga arquivos de vídeos já postados com mais de 5 dias (para não lotar o celular) */
+/** Apaga arquivos de vídeos já postados com mais de 5 dias (para não lotar o disco) */
 function cleanup() {
   const limit = Date.now() - 5 * 86400000;
   for (const j of jobs) {
@@ -255,4 +265,4 @@ function cleanup() {
   persist();
 }
 
-module.exports = { enqueue, list, get, approve, retry, remove, work, cleanup, persist, REFS_DIR, isBusy: () => busy };
+module.exports = { performance, enqueue, list, get, approve, retry, remove, work, cleanup, persist, REFS_DIR, isBusy: () => busy };

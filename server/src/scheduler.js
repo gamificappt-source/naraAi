@@ -27,6 +27,8 @@ function countFor(p, type, date) {
 /** Horários do dia para um perfil */
 function slotsFor(p, date) {
   const out = [];
+  // dias da semana em que este perfil posta (0 = domingo)
+  if (Array.isArray(p.days) && p.days.length && !p.days.map(Number).includes(new Date(date + 'T12:00:00Z').getUTCDay())) return out;
   const custom = String(p.customTimes || '').split(/[,;\s]+/).map(toMin).filter((x) => x != null).sort((a, b) => a - b);
   const start = toMin(p.windowStart) ?? 540;
   const end = Math.max(start + 1, toMin(p.windowEnd) ?? 1260);
@@ -79,7 +81,7 @@ async function tick() {
       if (!p.enabled) continue;
       for (const s of slotsFor(p, now.date)) {
         if (state.slots[s.key]) continue;
-        // produz no horário; se o celular ficou desligado, recupera atrasos de até 4h
+        // produz no horário; se o PC ficou desligado, recupera atrasos de até 4h
         if (s.minute <= now.minutes && now.minutes - s.minute <= 240) {
           try {
             const j = jobs.enqueue({ profileId: p.id, type: s.type, reason: `agenda ${s.time}`, slotKey: s.key });
@@ -99,7 +101,7 @@ async function tick() {
     const key = `${now.date}|${t.name}`;
     if (state.daily[key] || now.minutes < tm) continue;
     state.daily[key] = true;
-    if (now.minutes - tm > t.maxLateMin) continue; // passou da hora (ex.: celular estava desligado)
+    if (now.minutes - tm > t.maxLateMin) continue; // passou da hora (ex.: PC estava desligado)
     Promise.resolve().then(t.fn).catch((e) => logger.error(`Tarefa ${t.name}:`, e.message));
   }
   const dk = Object.keys(state.daily).sort();

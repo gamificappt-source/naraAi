@@ -2,654 +2,1049 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nara Painel</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='%237ee0c3'/><text x='50' y='66' font-size='50' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='%230d1117'>N</text></svg>">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B0D10">
+<title>NARA</title>
 <style>
+@font-face{font-family:"Anton";src:url(/assets/fonts/Anton-Regular.ttf) format("truetype");font-display:swap}
+@font-face{font-family:"Poppins";src:url(/assets/fonts/Poppins-Regular.ttf) format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Poppins";src:url(/assets/fonts/Poppins-Bold.ttf) format("truetype");font-weight:700;font-display:swap}
 :root{
-  --bg:#0d1117;--panel:#161b22;--panel2:#1c232d;--line:#2a3240;--text:#e6edf3;--muted:#8b98a9;
-  --acc:#7ee0c3;--acc2:#5aa9ff;--warn:#f2c14e;--bad:#ff6b6b;--good:#5fd38d;--radius:14px;
+  --bg:#0B0D10;--bg2:#101318;--panel:#14171C;--panel2:#1B1F26;--panel3:#232832;--line:#2A303A;
+  --text:#EEF0F3;--muted:#8B94A1;--dim:#5E6672;
+  --lime:#C8FF2E;--lime2:#A8E000;--ink:#0B0D10;--red:#FF5D5D;--amber:#FFB547;--blue:#73A9FF;--violet:#9B7BFF;
+  --r:22px;--r2:14px;--shadow:0 10px 40px rgba(0,0,0,.35);
+  --display:"Anton",Impact,"Arial Narrow",sans-serif;--body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
 }
-:root[data-theme="light"]{--bg:#f4f6f9;--panel:#fff;--panel2:#f0f3f7;--line:#d9dee6;--text:#18202b;--muted:#5d6b7d;--acc:#0f9d7a;--acc2:#2f6fd6}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-a{color:var(--acc2)}
-header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-.top{display:flex;align-items:center;gap:12px;max-width:1200px;margin:auto;padding:10px 16px}
-.logo{width:34px;height:34px;border-radius:50%;background:var(--acc);color:#0d1117;display:grid;place-items:center;font-weight:800}
-.top h1{font-size:18px;margin:0}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}
-.dot.on{background:var(--good);box-shadow:0 0 8px var(--good)}
-.status{font-size:13px;color:var(--muted);margin-left:auto;text-align:right}
-nav{display:flex;gap:4px;max-width:1200px;margin:auto;padding:0 12px;overflow-x:auto}
-nav button{background:none;border:0;color:var(--muted);padding:10px 12px;font:inherit;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
-nav button.active{color:var(--text);border-bottom-color:var(--acc)}
-main{max-width:1200px;margin:auto;padding:16px}
-.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;min-width:0}
-.card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
-.card h3{font-size:13px;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-input,select,textarea{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit}
-textarea{min-height:84px;resize:vertical}
-input[type=color]{height:40px;padding:3px}
-input[type=checkbox]{width:auto;transform:scale(1.25);margin-right:8px}
-.check{display:flex;align-items:center;color:var(--text);font-size:14px;margin:10px 0}
-.row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
-.btn{background:var(--acc);color:#0d1117;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
-.btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
-.btn.bad{background:var(--bad);color:#fff}
-.btn.sm{padding:6px 10px;font-size:13px}
-.btn:disabled{opacity:.5}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.hint{font-size:12.5px;color:var(--muted);margin-top:4px}
-.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
-.pill.done{color:var(--good);border-color:var(--good)}
-.pill.failed{color:var(--bad);border-color:var(--bad)}
-.pill.producing,.pill.publishing,.pill.queued,.pill.ready{color:var(--acc2);border-color:var(--acc2)}
-.pill.awaiting_approval,.pill.atrasado{color:var(--warn);border-color:var(--warn)}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:radial-gradient(1200px 600px at 85% -10%,rgba(200,255,46,.07),transparent 60%),var(--bg)}
+a{color:var(--lime)}
+button,input,select,textarea{font:inherit;color:inherit}
+::selection{background:var(--lime);color:var(--ink)}
+.hidden{display:none!important}
+
+/* ---------- topo ---------- */
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;padding:14px clamp(14px,3vw,32px);background:rgba(11,13,16,.82);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.04)}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:28px;letter-spacing:.04em;text-decoration:none;color:var(--text)}
+.logo i{width:12px;height:12px;border-radius:50%;background:var(--lime);box-shadow:0 0 18px var(--lime)}
+.nav{margin:0 auto;display:flex;gap:4px;background:#F2F3F5;border-radius:999px;padding:5px}
+.nav a{display:flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;color:#22262C;text-decoration:none;font-size:14px;font-weight:700;white-space:nowrap;transition:.15s}
+.nav a svg{width:17px;height:17px}
+.nav a:hover{background:#E2E5E9}
+.nav a.on{background:var(--lime);color:var(--ink)}
+.topr{display:flex;align-items:center;gap:10px;margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:13px;font-weight:700;white-space:nowrap}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
+.chip.off .dot{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.iconbtn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--panel2);border:1px solid var(--line);cursor:pointer;color:var(--text)}
+.iconbtn:hover{border-color:var(--lime)}
+.iconbtn svg{width:18px;height:18px}
+
+main{max-width:1440px;margin:0 auto;padding:clamp(16px,3vw,34px) clamp(14px,3vw,32px) 120px}
+
+/* ---------- tipografia ---------- */
+.h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,7vw,92px);line-height:.92;letter-spacing:.01em;text-transform:uppercase;margin:0}
+.h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,3vw,36px);line-height:1;text-transform:uppercase;margin:0;letter-spacing:.02em}
+.h3{font-size:16px;font-weight:700;margin:0}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}.dim{color:var(--dim)}
+.tag{display:inline-block;background:var(--lime);color:var(--ink);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:4px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+.head p{margin:10px 0 0;color:var(--muted)}
+
+/* ---------- cartões ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:clamp(16px,2vw,24px)}
+.card.light{background:#F4F5F7;color:#14171C;border-color:#F4F5F7}
+.card.light .label,.card.light .muted{color:#6B7380}
+.card.lime{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+.card.lime .label{color:rgba(11,13,16,.65)}
+.cardh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+.kpi .num{font-family:var(--display);font-size:clamp(36px,4vw,52px);line-height:1;margin:10px 0 6px}
+.kpi .var{font-size:13px;font-weight:700}
+.up{color:var(--lime)}.down{color:var(--red)}
+.card.light .up{color:#4C8A00}
+.arrow{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;opacity:.6}
+.rel{position:relative}
+
+/* ---------- botões ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap;transition:.15s}
+.btn:hover{border-color:var(--muted)}
+.btn svg{width:17px;height:17px}
+.btn.pri{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+.btn.pri:hover{background:var(--lime2)}
+.btn.white{background:#fff;color:var(--ink);border-color:#fff}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--red);border-color:rgba(255,93,93,.4);background:transparent}
+.btn.sm{padding:7px 13px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:wait}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.between{justify-content:space-between}
+
+/* ---------- formulários ---------- */
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field>span{font-size:13px;font-weight:700;color:#C9CED6}
+.field small{color:var(--muted);font-size:12.5px;line-height:1.4}
+input[type=text],input[type=password],input[type=number],input[type=time],input[type=url],select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;outline:none;transition:.15s;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(200,255,46,.12)}
+textarea{min-height:110px;resize:vertical;line-height:1.5}
+textarea.big{min-height:230px;font-family:var(--mono);font-size:13.5px}
+input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg2);padding:4px;cursor:pointer}
+.fields{display:grid;gap:16px}
+.f2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.f3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.f4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);cursor:pointer}
+.switch b{font-size:14px}.switch small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
+.switch input{appearance:none;width:46px;height:26px;border-radius:999px;background:var(--panel3);position:relative;cursor:pointer;flex:none;transition:.2s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked{background:var(--lime)}
+.switch input:checked::after{left:23px;background:var(--ink)}
+.seg{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:700;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--lime);color:var(--ink)}
+.days{display:flex;gap:6px;flex-wrap:wrap}
+.days button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-weight:700}
+.days button.on{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-size:13px;font-weight:700}
+.pill:hover,.pill.on{border-color:var(--lime);color:var(--lime)}
+
+/* ---------- biblioteca de perfis ---------- */
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.cover{position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;cursor:pointer;background:linear-gradient(150deg,#1d232c,#0f1216);border:1px solid var(--line);transition:transform .2s,box-shadow .2s,border-color .2s;text-decoration:none;color:var(--text);display:block}
+.cover:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--lime)}
+.cover img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cover .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 30%,rgba(0,0,0,.88))}
+.cover .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:120px;color:rgba(255,255,255,.06)}
+.cover .info{position:absolute;left:16px;right:16px;bottom:16px}
+.cover .nm{font-family:var(--display);font-size:30px;line-height:1;text-transform:uppercase;margin:8px 0 4px;word-break:break-word}
+.cover .sub{font-size:12.5px;color:#C9CED6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cover .badges{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:6px}
+.cover .lg{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--lime);background:#000}
+.mini{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);font-size:11.5px;font-weight:700}
+.mini.ok{color:var(--lime)}.mini.off{color:#aaa}
+.cover .stats{display:flex;gap:14px;margin-top:10px;font-size:12.5px}
+.cover .stats b{font-size:15px}
+.new{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:2px dashed var(--line);background:transparent}
+.new:hover{border-color:var(--lime)}
+.new .plus{width:64px;height:64px;border-radius:50%;background:var(--lime);color:var(--ink);display:grid;place-items:center;font-size:34px;font-weight:700}
+
+/* ---------- página do perfil ---------- */
+.hero{position:relative;border-radius:28px;overflow:hidden;min-height:260px;display:flex;align-items:flex-end;padding:clamp(18px,3vw,32px);background:#151a21;border:1px solid var(--line)}
+.hero .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(2px) brightness(.55);transform:scale(1.04)}
+.hero .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,13,16,.92),rgba(11,13,16,.35))}
+.hero .in{position:relative;display:flex;gap:22px;align-items:flex-end;width:100%;flex-wrap:wrap}
+.hero .lg{width:110px;height:110px;border-radius:26px;object-fit:cover;border:3px solid var(--lime);background:#000;flex:none}
+.hero .lgph{width:110px;height:110px;border-radius:26px;border:2px dashed var(--line);display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center;flex:none}
+.back{display:inline-flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-weight:700;margin-bottom:14px}
+.back:hover{color:var(--text)}
+.tabs{position:sticky;top:69px;z-index:30;display:flex;gap:6px;overflow-x:auto;padding:10px 0;margin:22px 0 6px;background:linear-gradient(var(--bg) 70%,transparent);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tabs button svg{width:16px;height:16px}
+.tabs button.on{background:#F2F3F5;color:var(--ink);border-color:#F2F3F5}
+.pane{display:none}.pane.on{display:block}
+.drop{position:relative;border:2px dashed var(--line);border-radius:18px;background:var(--bg2);min-height:170px;display:grid;place-items:center;text-align:center;cursor:pointer;overflow:hidden;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--lime)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#07090b}
+.drop .msg{position:relative;padding:18px;color:var(--muted);font-size:13px}
+.drop .msg b{display:block;color:var(--text);font-size:14px;margin-bottom:4px}
+.drop .x{position:absolute;top:8px;right:8px;z-index:2}
+.drop.has .msg{display:none}
+.analysis{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:12.5px;color:#C9CED6;max-height:140px;overflow:auto}
+.voices{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;max-height:430px;overflow:auto;padding-right:4px}
+.voice{position:relative;border:1px solid var(--line);background:var(--bg2);border-radius:14px;padding:12px 14px;cursor:pointer;transition:.15s}
+.voice:hover{border-color:var(--muted)}
+.voice.on{border-color:var(--lime);background:rgba(200,255,46,.08)}
+.voice b{display:block;font-size:14px}
+.voice small{color:var(--muted);font-size:12px}
+.voice .g{position:absolute;top:10px;right:10px;font-size:10px;font-family:var(--mono);color:var(--dim);text-transform:uppercase}
+.savebar{position:fixed;left:50%;bottom:22px;transform:translate(-50%,40px);opacity:0;visibility:hidden;pointer-events:none;z-index:60;display:flex;align-items:center;gap:16px;padding:10px 10px 10px 22px;border-radius:999px;background:#F2F3F5;color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.5);transition:transform .25s;font-weight:700;max-width:calc(100vw - 24px)}
+.savebar.show{transform:translate(-50%,0);opacity:1;visibility:visible;pointer-events:auto}
+.savebar{transition:transform .25s,opacity .25s,visibility .25s}
+
+/* ---------- listas ---------- */
 .list{display:flex;flex-direction:column;gap:8px}
-.item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.item .t{font-weight:600}
-.item .s{font-size:12.5px;color:var(--muted);word-break:break-word}
-.kpi{display:flex;gap:10px;flex-wrap:wrap}
-.kpi div{flex:1;min-width:110px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
-.kpi b{display:block;font-size:20px}
-.kpi small{color:var(--muted)}
-.up{color:var(--good)}.down{color:var(--bad)}
-.chat{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto;margin-bottom:10px}
-.msg{padding:8px 11px;border-radius:12px;max-width:88%;font-size:14px}
-.msg.voce{align-self:flex-end;background:var(--acc2);color:#fff}
-.msg.nara{align-self:flex-start;background:var(--panel2);border:1px solid var(--line)}
-.preview{display:flex;gap:6px;overflow-x:auto;margin-top:8px}
-.preview img{height:150px;border-radius:8px}
-.preview video{height:260px;border-radius:8px;background:#000}
-.logs{font:12px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;max-height:380px;overflow:auto;background:var(--panel2);padding:10px;border-radius:10px;word-break:break-all}
-.ref img{max-width:100%;max-height:220px;border-radius:10px;margin-top:8px}
-.hide{display:none!important}
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--acc);padding:10px 16px;border-radius:12px;z-index:20;max-width:92vw}
-.login{max-width:420px;margin:12vh auto}
-.profbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:14px}
-.profbar select{max-width:340px}
-.steps li{margin:6px 0}
-code{background:var(--panel2);padding:1px 6px;border-radius:6px;font-size:13px}
-@media (max-width:560px){main{padding:12px}.card{padding:13px}.status{font-size:11px}}
+.item{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;background:var(--bg2);border:1px solid var(--line)}
+.item .t{flex:1;min-width:0}
+.item .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.item .t small{color:var(--muted);font-size:12.5px}
+.time{font-family:var(--display);font-size:22px;min-width:64px}
+.st{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700;background:var(--panel3);color:#C9CED6;white-space:nowrap}
+.st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st.done{color:var(--lime);background:rgba(200,255,46,.1)}
+.st.failed{color:var(--red);background:rgba(255,93,93,.1)}
+.st.producing,.st.publishing{color:var(--blue);background:rgba(115,169,255,.1)}
+.st.awaiting_approval,.st.atrasado{color:var(--amber);background:rgba(255,181,71,.1)}
+.st.queued,.st.ready,.st.agendado{color:#C9CED6}
+.thumb{width:54px;height:72px;border-radius:10px;background:#000;object-fit:cover;flex:none}
+.job{border:1px solid var(--line);background:var(--bg2);border-radius:18px;padding:14px}
+.job .steps{margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:0;overflow:hidden;transition:max-height .3s}
+.job.open .steps{max-height:400px;overflow:auto}
+.job video,.job .imgs img{max-width:100%;border-radius:12px;margin-top:12px;background:#000}
+.job .imgs{display:flex;gap:8px;overflow-x:auto}
+.job .imgs img{height:220px}
+.err{color:var(--red);font-size:13px;margin-top:6px;word-break:break-word}
+
+/* ---------- conversa ---------- */
+.chat{display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding:4px}
+.msg{max-width:85%;padding:11px 15px;border-radius:18px;font-size:14.5px;white-space:pre-wrap;word-wrap:break-word}
+.msg.nara{background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:6px;align-self:flex-start}
+.msg.voce{background:var(--lime);color:var(--ink);border-bottom-right-radius:6px;align-self:flex-end;font-weight:600}
+.msg small{display:block;font-size:11px;opacity:.6;margin-top:4px}
+.composer{display:flex;gap:8px;margin-top:12px}
+.composer input{border-radius:999px;padding:13px 18px}
+.chatbig{height:min(62vh,640px)}
+.suggest{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* ---------- gráfico ---------- */
+.spark{width:100%;height:120px;display:block}
+.bars{display:flex;align-items:flex-end;gap:6px;height:90px}
+.bars div{flex:1;background:var(--panel3);border-radius:6px 6px 2px 2px;min-height:4px;position:relative}
+.bars div.hi{background:var(--lime)}
+
+/* ---------- login / toast / modal ---------- */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login .box{width:min(440px,100%)}
+.login .h1{font-size:clamp(90px,22vw,150px)}
+.toast{position:fixed;top:84px;right:20px;z-index:90;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 40px))}
+.toast div{background:#F2F3F5;color:var(--ink);padding:12px 16px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:var(--shadow);animation:in .25s}
+.toast div.bad{background:var(--red);color:#fff}
+@keyframes in{from{transform:translateY(-8px);opacity:0}}
+.modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px}
+.modal .card{width:min(520px,100%);max-height:90vh;overflow:auto}
+.steps-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;color:#C9CED6;font-size:14px}
+.steps-list b{color:var(--text)}
+code{font-family:var(--mono);background:var(--bg2);border:1px solid var(--line);padding:2px 7px;border-radius:7px;font-size:12.5px;word-break:break-all}
+.logs{font-family:var(--mono);font-size:12px;background:#07090B;border:1px solid var(--line);border-radius:14px;padding:12px;height:320px;overflow:auto;white-space:pre-wrap;color:#AEB6C1}
+.keyrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.keyrow .n{font-family:var(--display);font-size:22px;color:var(--dim);width:24px}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
+
+/* ---------- responsivo ---------- */
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.split{grid-template-columns:1fr}.f4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){
+  .top{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
+  .nav{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));margin:0;justify-content:space-between;z-index:50;box-shadow:0 10px 40px rgba(0,0,0,.55)}
+  .nav a{flex-direction:column;gap:3px;padding:8px 6px;font-size:10.5px;flex:1}
+  .nav a svg{width:20px;height:20px}
+  .top .chip span{display:none}
+  .g3,.g2,.f2,.f3{grid-template-columns:1fr}
+  .tabs{top:65px}
+  .savebar{bottom:96px}
+  main{padding-bottom:150px}
+  .hero{min-height:220px}
+  .hero .lg,.hero .lgph{width:80px;height:80px;border-radius:20px}
+}
+@media (max-width:520px){.g4,.f4{grid-template-columns:1fr 1fr}.lib{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.cover .nm{font-size:22px}.msg{max-width:92%}}
 </style>
 </head>
 <body>
-<header class="hide" id="hdr">
-  <div class="top">
-    <div class="logo">N</div><h1>Nara</h1>
-    <div class="status"><span class="dot" id="dot"></span><span id="stxt">conectando…</span></div>
-  </div>
-  <nav id="nav">
-    <button data-tab="painel" class="active">Painel</button>
-    <button data-tab="perfis">Perfis</button>
-    <button data-tab="chaves">Chaves e ajustes</button>
-    <button data-tab="sistema">Sistema</button>
-    <button data-tab="ajuda">Ajuda</button>
-  </nav>
-</header>
 
 <!-- LOGIN -->
-<div class="login card" id="login">
-  <h2><span class="logo" style="width:28px;height:28px">N</span> Entrar na Nara</h2>
-  <div id="srvBox">
-    <label>Endereço da Nara (celular)</label>
-    <input id="srv" placeholder="http://100.x.x.x:8080">
-    <div class="hint">Só precisa preencher se você abriu esta página fora do celular (ex.: Netlify). Abrindo pelo próprio celular ou pelo IP dele, deixe vazio.</div>
+<section id="login" class="login hidden">
+  <div class="box">
+    <div class="label">Assistente de conteúdo</div>
+    <h1 class="h1">NARA<span style="color:var(--lime)">.</span></h1>
+    <p class="muted" style="margin:6px 0 22px">Digite a senha da página para entrar.</p>
+    <form id="loginForm" class="row" style="flex-wrap:nowrap">
+      <input id="loginPass" type="password" placeholder="Senha" autocomplete="current-password" style="border-radius:999px;padding:14px 20px">
+      <button class="btn pri" style="padding:14px 22px">Entrar</button>
+    </form>
+    <div id="loginErr" class="err"></div>
   </div>
-  <label>Senha da página</label>
-  <input id="pwd" type="password" placeholder="aparece no terminal do Termux">
-  <div class="actions"><button class="btn" id="btnLogin">Entrar</button></div>
-  <div class="hint" id="loginErr"></div>
+</section>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header class="top">
+    <a class="logo" href="#/painel"><i></i>NARA</a>
+    <nav class="nav" id="nav">
+      <a href="#/painel" data-v="painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Painel</a>
+      <a href="#/perfis" data-v="perfis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="16" rx="2"/><rect x="14" y="4" width="7" height="16" rx="2"/></svg>Perfis</a>
+      <a href="#/agenda" data-v="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</a>
+      <a href="#/nara" data-v="nara"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Nara</a>
+      <a href="#/ajustes" data-v="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 1.2 14H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 7 2.6V2.5a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1.5z"/></svg>Ajustes</a>
+    </nav>
+    <div class="topr">
+      <button class="chip" id="statusChip" title="Pausar ou retomar todas as postagens"><i class="dot"></i><span id="statusTxt">Rodando</span></button>
+    </div>
+  </header>
+  <main id="view"></main>
 </div>
 
-<main class="hide" id="app">
-<!-- PAINEL -->
-<section data-page="painel">
-  <div class="grid">
-    <div class="card">
-      <h2>🗣️ Falar com a Nara</h2>
-      <div class="chat" id="chat"></div>
-      <div style="display:flex;gap:8px">
-        <input id="cmd" placeholder='Ex.: "Nara, posta um vídeo extra hoje no perfil X"'>
-        <button class="btn" id="btnCmd">Enviar</button>
-      </div>
-      <div class="actions">
-        <button class="btn sec sm" id="btnBrief">☀️ Briefing do dia</button>
-        <button class="btn sec sm" id="btnStats">📊 Atualizar números</button>
-        <button class="btn sec sm" id="btnPause"></button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>📅 Agenda de hoje</h2>
-      <div class="list" id="today"></div>
-    </div>
-    <div class="card">
-      <h2>📈 Perfis (seguidores)</h2>
-      <div class="list" id="stats"></div>
-    </div>
-  </div>
-  <div class="card" style="margin-top:14px">
-    <h2>🎬 Produções <span class="pill" id="busy"></span></h2>
-    <div class="actions" style="margin:0 0 12px">
-      <select id="qProf" style="max-width:220px"></select>
-      <select id="qType" style="max-width:160px"><option value="video">Vídeo</option><option value="carousel">Carrossel</option><option value="image">Imagem única</option></select>
-      <input id="qTopic" placeholder="Tema (opcional — vazio = Nara escolhe)" style="flex:1;min-width:200px">
-      <button class="btn" id="btnProduce">Produzir agora</button>
-    </div>
-    <div class="list" id="jobs"></div>
-  </div>
-</section>
-
-<!-- PERFIS -->
-<section data-page="perfis" class="hide">
-  <div class="profbar">
-    <div style="flex:1;min-width:220px"><label>Perfil que você quer gerenciar</label><select id="profSel"></select></div>
-    <button class="btn sec" id="btnNewProf">+ Novo perfil</button>
-    <button class="btn" id="btnSaveProf">💾 Salvar perfil</button>
-  </div>
-  <div id="profEmpty" class="card hide">Nenhum perfil ainda. Clique em <b>+ Novo perfil</b>.</div>
-  <div class="grid" id="profForm">
-    <div class="card">
-      <h2>🧭 Básico</h2>
-      <label>Nome do perfil</label><input data-k="name">
-      <label class="check"><input type="checkbox" data-k="enabled">Perfil ativo (produzindo e postando)</label>
-      <label>Nicho / assunto</label><input data-k="niche" placeholder="Ex.: casos de investigação reais, curiosidades de história…">
-      <label>Público</label><input data-k="audience" placeholder="Ex.: brasileiros 18-35 que gostam de mistério">
-      <div class="row">
-        <div><label>Idioma</label><select data-k="language"><option>pt-BR</option><option>en-US</option><option>es-ES</option></select></div>
-        <div><label>Tom</label><input data-k="tone"></div>
-      </div>
-      <label>Evitar (assuntos/palavras)</label><input data-k="avoid">
-      <label>Fila de temas (1 por linha — a Nara usa estes primeiro)</label>
-      <textarea data-k="topics" data-list="1" placeholder="O caso do voo 571&#10;A cidade que sumiu do mapa"></textarea>
-      <div class="hint">Quando a fila acaba, a Nara pesquisa temas novos sozinha.</div>
-    </div>
-
-    <div class="card">
-      <h2>⏰ Quantidade e horários</h2>
-      <div class="row">
-        <div><label>Vídeos por dia</label><input type="number" min="0" max="20" data-k="videosPerDay"></div>
-        <div><label>Carrosséis por dia</label><input type="number" min="0" max="20" data-k="carouselsPerDay"></div>
-        <div><label>Imagens por dia</label><input type="number" min="0" max="20" data-k="imagesPerDay"></div>
-      </div>
-      <div class="row">
-        <div><label>Começa às</label><input type="time" data-k="windowStart"></div>
-        <div><label>Termina às</label><input type="time" data-k="windowEnd"></div>
-      </div>
-      <label>Horários fixos dos vídeos (opcional)</label><input data-k="customTimes" placeholder="09:00, 12:30, 19:00">
-      <div class="hint">Se deixar vazio, a Nara espalha os posts entre o início e o fim.</div>
-      <label class="check"><input type="checkbox" data-k="autoPost">Postar sozinha (desmarcado = espera minha aprovação no Painel)</label>
-      <div class="hint" id="boostInfo"></div>
-      <h3>Prévia da agenda de hoje</h3>
-      <div class="list" id="slotPrev"></div>
-    </div>
-
-    <div class="card">
-      <h2>🎬 Vídeo</h2>
-      <div class="row">
-        <div><label>Formato</label><select data-k="videoFormat"><option value="short">Vertical 9:16 (Shorts/Reels)</option><option value="long">Horizontal 16:9 (YouTube)</option></select></div>
-        <div><label>Duração (segundos)</label><input type="number" min="15" max="600" data-k="videoSeconds"></div>
-      </div>
-      <div class="row">
-        <div><label>Estilo visual</label><select data-k="videoStyle">
-          <option value="2d">2D ilustrado</option><option value="3d">3D</option><option value="realista">Fotos realistas</option>
-          <option value="documentario">Documentário / investigação</option><option value="anime">Anime</option><option value="minimalista">Minimalista</option></select></div>
-        <div><label>Imagens vêm de</label><select data-k="imageSource">
-          <option value="mix">Misto (internet + IA)</option><option value="web">Só internet (fotos reais)</option><option value="ai">Só geradas por IA</option></select></div>
-      </div>
-      <label>Seu prompt do vídeo (o mesmo que você usa hoje)</label>
-      <textarea data-k="videoPrompt" style="min-height:140px" placeholder="Ex.: Vídeo de investigação, clima tenso, mostrar fotos reais dos locais, mapas, recortes de jornal…"></textarea>
-      <div class="row">
-        <div><label>Voz da narração (Google)</label><select data-k="voice">
-          <option>Kore</option><option>Puck</option><option>Charon</option><option>Fenrir</option><option>Aoede</option><option>Leda</option><option>Orus</option><option>Zephyr</option>
-          <option>Enceladus</option><option>Iapetus</option><option>Algenib</option><option>Gacrux</option><option>Sadaltager</option><option>Achird</option></select></div>
-        <div><label class="check" style="margin-top:32px"><input type="checkbox" data-k="music">Música de fundo</label></div>
-      </div>
-      <label>Jeito de narrar</label><input data-k="voiceStyle">
-    </div>
-
-    <div class="card">
-      <h2>💬 Legendas do vídeo</h2>
-      <div class="row">
-        <div><label>Fonte</label><select data-k="subtitle.font"><option>Anton</option><option>Bebas Neue</option><option>Poppins</option><option>Montserrat</option><option>Roboto</option></select></div>
-        <div><label>Tamanho</label><input type="number" min="30" max="160" data-k="subtitle.size"></div>
-        <div><label>Palavras por vez</label><input type="number" min="1" max="8" data-k="subtitle.wordsPerLine"></div>
-      </div>
-      <div class="row">
-        <div><label>Cor do texto</label><input type="color" data-k="subtitle.color"></div>
-        <div><label>Palavra em destaque</label><input type="color" data-k="subtitle.highlight"></div>
-        <div><label>Contorno</label><input type="color" data-k="subtitle.outline"></div>
-      </div>
-      <div class="row">
-        <div><label>Posição</label><select data-k="subtitle.position"><option value="top">Em cima</option><option value="middle">Meio</option><option value="bottom">Embaixo</option></select></div>
-        <div><label class="check" style="margin-top:32px"><input type="checkbox" data-k="subtitle.uppercase">MAIÚSCULAS</label></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>🎨 Referência visual e cores</h2>
-      <label>Imagem de referência do estilo</label>
-      <input type="file" id="refFile" accept="image/png,image/jpeg,image/webp">
-      <div class="ref" id="refBox"></div>
-      <div class="hint">Envie uma imagem no estilo que você quer (ex.: um frame 2D de investigação). A Claude analisa as cores e o traço e a Nara segue essa linha.</div>
-      <label>Estilo entendido pela IA</label><textarea data-k="styleAnalysis" placeholder="(preenchido sozinho depois de enviar a referência — pode editar)"></textarea>
-      <label>Cores da marca (fundo, destaque, texto)</label>
-      <div class="row"><input type="color" data-k="palette.0"><input type="color" data-k="palette.1"><input type="color" data-k="palette.2"></div>
-    </div>
-
-    <div class="card">
-      <h2>🖼️ Carrossel e imagem</h2>
-      <div class="row">
-        <div><label>Slides por carrossel</label><input type="number" min="2" max="10" data-k="carouselSlides"></div>
-        <div><label>Fonte</label><select data-k="carouselFont"><option>Poppins</option><option>Montserrat</option><option>Anton</option><option>Bebas Neue</option><option>Roboto</option></select></div>
-      </div>
-      <label>Instruções do carrossel</label><textarea data-k="carouselPrompt" placeholder="Ex.: Cada slide com um fato curto, capa com pergunta polêmica…"></textarea>
-      <label>Como escrever a legenda</label><textarea data-k="captionPrompt"></textarea>
-      <label>Hashtags fixas</label><input data-k="hashtags" placeholder="#misterio #investigacao">
-    </div>
-
-    <div class="card">
-      <h2>▶️ YouTube</h2>
-      <label class="check"><input type="checkbox" data-k="youtube.enabled">Postar no YouTube</label>
-      <div class="row">
-        <div><label>Visibilidade</label><select data-k="youtube.privacy"><option value="public">Público</option><option value="unlisted">Não listado</option><option value="private">Privado</option></select></div>
-      </div>
-      <div class="item" style="margin-top:10px"><div class="t" id="ytStatus">—</div>
-        <div class="actions">
-          <button class="btn sm" id="btnYt">Conectar canal do YouTube</button>
-        </div>
-        <div id="ytPaste" class="hide">
-          <label>Se a página de retorno não abriu (você está no computador), copie o endereço inteiro da barra do navegador e cole aqui:</label>
-          <input id="ytCode" placeholder="http://localhost:8080/oauth/youtube/callback?state=…&code=…">
-          <div class="actions"><button class="btn sm" id="btnYtCode">Confirmar</button></div>
-        </div>
-      </div>
-      <div class="hint">Antes, cole o Client ID/Secret do Google em “Chaves e ajustes”. Veja o passo a passo em Ajuda.</div>
-    </div>
-
-    <div class="card">
-      <h2>📸 Instagram</h2>
-      <label class="check"><input type="checkbox" data-k="instagram.enabled">Postar no Instagram</label>
-      <label>ID da conta do Instagram (opcional — a Nara descobre pelo token)</label><input data-k="instagram.userId" placeholder="1784…">
-      <label>Token de acesso (longa duração)</label><input data-k="instagram.accessToken" placeholder="IGAA…">
-      <div class="actions"><button class="btn sec sm" id="btnIgTest">Testar conexão</button><span class="hint" id="igStatus"></span></div>
-      <div class="hint">A conta precisa ser Profissional (Criador ou Empresa). O token é renovado sozinho toda semana.</div>
-    </div>
-
-    <div class="card">
-      <h2>🗑️ Zona de perigo</h2>
-      <button class="btn bad" id="btnDelProf">Apagar este perfil</button>
-    </div>
-  </div>
-</section>
-
-<!-- CHAVES -->
-<section data-page="chaves" class="hide">
-  <div class="grid">
-    <div class="card">
-      <h2>🔑 Chaves de API</h2>
-      <label>🧠 DeepSeek API key — <b>cérebro</b> da Nara (conversa, briefing, seus pedidos)</label><input data-s="deepseekKey" placeholder="sk-…">
-      <div class="hint">platform.deepseek.com → API keys.</div>
-      <label>⚙️ Claude API key — <b>motor</b> (pesquisa temas, escreve roteiros e carrosséis, entende sua referência visual)</label><input data-s="anthropicKey" placeholder="sk-ant-…">
-      <div class="hint"><b>Opcional.</b> Deixe vazio para usar a sua assinatura Claude (Pro/Max) pelo Claude Code instalado neste PC (login uma vez com <code>claude auth login</code>). Só cole uma chave (platform.claude.com, com créditos) se quiser pagar por uso em vez da assinatura.</div>
-      <label>🎙️ Google AI Studio API key — <b>só para narrar os vídeos</b> (versão grátis)</label><input data-s="googleKey" placeholder="AIza…">
-      <div class="hint">aistudio.google.com → Get API key. A versão grátis tem limite diário de narrações.</div>
-      <label>👂 Groq API key (opcional, grátis) — para a Nara entender o que você fala no Atom S3R</label><input data-s="groqKey" placeholder="gsk_…">
-      <div class="hint">console.groq.com → API Keys. Sem ela, quando você aperta o botão do Atom, quem escuta é o microfone do celular.</div>
-      <label>Pexels API key (opcional, mais fotos grátis)</label><input data-s="pexelsKey">
-      <h3>YouTube (Google Cloud – OAuth)</h3>
-      <label>Client ID</label><input data-s="youtubeClientId" placeholder="….apps.googleusercontent.com">
-      <label>Client Secret</label><input data-s="youtubeClientSecret">
-      <div class="hint">No Google Cloud, crie a credencial do tipo <b>App para computador (Desktop)</b>. Veja o passo a passo no README.</div>
-      <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button><button class="btn sec" id="btnTestKeys">Testar chaves</button></div>
-      <div class="hint" id="keysOut"></div>
-    </div>
-    <div class="card">
-      <h2>🤖 Nara (voz e Atom S3R)</h2>
-      <label>Palavra de ativação</label><input data-s="nara.wakeWord">
-      <label>Voz da Nara (grátis)</label><select data-s="nara.voice">
-        <option value="pt-BR-ThalitaMultilingualNeural">Thalita (feminina, natural)</option>
-        <option value="pt-BR-FranciscaNeural">Francisca (feminina)</option>
-        <option value="pt-BR-AntonioNeural">Antônio (masculina)</option></select>
-      <label class="check"><input type="checkbox" data-s="nara.speakOnPhone">Falar pelo alto-falante do celular (ou caixa de som Bluetooth)</label>
-      <label class="check"><input type="checkbox" data-s="nara.speakOnDevice">Mandar a voz para o Atom S3R (se tiver a base com alto-falante)</label>
-      <label class="check"><input type="checkbox" data-s="nara.listenOnPhoneAfterWake">Depois do briefing, ouvir meu pedido pelo microfone do celular</label>
-      <label>Briefing automático todo dia às (vazio = só quando chamar)</label><input type="time" data-s="nara.briefingTime">
-      <div class="actions"><button class="btn sec sm" id="btnVoice">🔊 Ouvir a voz da Nara</button></div>
-      <label>Token do Atom S3R (cole na tela "Nara-Setup" do Atom)</label><input id="devTok" readonly>
-      <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button></div>
-    </div>
-    <div class="card">
-      <h2>⚙️ Geral</h2>
-      <label>Fuso horário</label><input data-s="timezone">
-      <div class="row">
-        <div><label>Qualidade do vídeo</label><select data-s="render.quality"><option value="1080">1080p</option><option value="720">720p (mais rápido)</option></select></div>
-        <div><label>Quadros por segundo</label><select data-s="render.fps"><option value="30">30</option><option value="24">24</option></select></div>
-      </div>
-      <div class="row">
-        <div><label>Modelo DeepSeek</label><input data-s="deepseekModel"></div>
-        <div><label>Modelo Claude</label><input data-s="claudeModel"></div>
-        <div><label>Capricho da Claude</label><select data-s="claudeEffort"><option value="low">Rápido/barato</option><option value="medium">Equilibrado</option><option value="high">Caprichado (mais caro)</option></select></div>
-        <div><label>Modelo Google (narração)</label><input data-s="geminiTtsModel"></div>
-      </div>
-      <label>Nova senha da página (deixe vazio para manter)</label><input id="newPwd" type="text">
-      <div class="actions"><button class="btn" data-save-settings>💾 Salvar</button><button class="btn sec" id="btnLogout">Sair</button></div>
-    </div>
-  </div>
-</section>
-
-<!-- SISTEMA -->
-<section data-page="sistema" class="hide">
-  <div class="grid">
-    <div class="card"><h2>📡 Como acessar</h2><div id="sysInfo" class="list"></div></div>
-    <div class="card" style="grid-column:1/-1"><h2>🧾 Registro (últimas linhas)</h2><div class="logs" id="logs"></div></div>
-  </div>
-</section>
-
-<!-- AJUDA -->
-<section data-page="ajuda" class="hide">
-  <div class="card">
-    <h2>📘 Resumo rápido</h2>
-    <ol class="steps">
-      <li><b>Chaves e ajustes:</b> cole as chaves do DeepSeek (cérebro), da Claude (motor) e do Google AI Studio (narração) → Salvar → Testar chaves.</li>
-      <li><b>Perfis:</b> crie um perfil por conta, escolha quantos vídeos/carrosséis por dia, o estilo, envie a imagem de referência e cole o seu prompt.</li>
-      <li><b>YouTube:</b> cole Client ID/Secret em Chaves → no perfil, clique “Conectar canal”, escolha o canal certo.</li>
-      <li><b>Instagram:</b> cole o ID da conta e o token no perfil → Testar conexão.</li>
-      <li><b>Teste:</b> no Painel, escolha o perfil e clique “Produzir agora”. Deixe “Postar sozinha” desmarcado no primeiro teste para revisar.</li>
-      <li><b>Música:</b> coloque arquivos .mp3 sem direitos autorais na pasta <code>naraAi/server/data/music</code> (ou numa subpasta com o ID do perfil).</li>
-    </ol>
-    <p class="hint">O guia completo, com fotos de onde clicar, está no arquivo <code>README.md</code> do projeto.</p>
-  </div>
-</section>
-</main>
-
-<div class="toast hide" id="toast"></div>
+<div class="toast" id="toast"></div>
+<div class="savebar" id="savebar"><span id="saveTxt">Alterações não salvas</span><button class="btn sm ghost" id="discardBtn" style="color:var(--ink);border-color:#cfd3d8">Desfazer</button><button class="btn pri" id="saveBtn">Salvar</button></div>
 
 <script>
+'use strict';
+/* =================== utilidades =================== */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const store = {
   get(k) { try { return localStorage.getItem(k) || ''; } catch (_) { return ''; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
   del(k) { try { localStorage.removeItem(k); } catch (_) {} },
 };
-let SRV = store.get('nara_srv');
-let TOKEN = store.get('nara_token');
-let S = null; // estado do servidor
-let curProfId = store.get('nara_prof');
+let TOKEN = store.get('naraToken');
+let S = null;          // estado vindo do servidor
+let VOICES = null;     // vozes
+let DRAFT = null;      // rascunho do perfil aberto
+let SDRAFT = {};       // alterações de ajustes
 let dirty = false;
+let saveFn = null;
 
-function toast(msg, ms = 3500) {
-  const t = $('#toast'); t.textContent = msg; t.classList.remove('hide');
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add('hide'), ms);
+function toast(msg, bad = false) {
+  const d = document.createElement('div');
+  d.textContent = msg;
+  if (bad) d.className = 'bad';
+  $('#toast').appendChild(d);
+  setTimeout(() => d.remove(), bad ? 7000 : 3500);
 }
-function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-
 async function api(path, opts = {}) {
-  const res = await fetch(SRV + path, {
-    ...opts,
-    headers: { 'Content-Type': 'application/json', 'x-nara-token': TOKEN, ...(opts.headers || {}) },
-    body: opts.body && typeof opts.body !== 'string' ? JSON.stringify(opts.body) : opts.body,
-  });
-  const d = await res.json().catch(() => ({}));
-  if (res.status === 401) { showLogin('Senha necessária'); throw new Error('Senha necessária'); }
-  if (!res.ok) throw new Error(d.error || 'Erro ' + res.status);
+  const o = { method: opts.method || (opts.body !== undefined ? 'POST' : 'GET'), headers: { 'x-nara-token': TOKEN } };
+  if (opts.body !== undefined) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(opts.body); }
+  const r = await fetch(path, o);
+  if (r.status === 401 && !path.startsWith('/api/login')) { logout(); throw new Error('Senha necessária'); }
+  if (opts.raw) { if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Erro ' + r.status); return r; }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Erro ' + r.status);
   return d;
 }
-
-// ---------- login ----------
-async function detectServer() {
-  if (SRV) return;
-  try { const r = await fetch('/api/ping'); if (r.ok && (await r.json()).name === 'Nara') { SRV = ''; $('#srvBox').classList.add('hide'); return; } } catch (_) {}
-  $('#srvBox').classList.remove('hide');
+async function busy(btn, fn) {
+  const t = btn && btn.innerHTML;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span>Aguarde…</span>'; }
+  try { return await fn(); } catch (e) { toast(e.message, true); } finally { if (btn) { btn.disabled = false; btn.innerHTML = t; } }
 }
-function showLogin(err) {
-  $('#login').classList.remove('hide'); $('#app').classList.add('hide'); $('#hdr').classList.add('hide');
-  $('#loginErr').textContent = err || '';
-  $('#srv').value = SRV;
-}
-$('#btnLogin').onclick = async () => {
-  const srvIn = $('#srv').value.trim().replace(/\/$/, '');
-  if (!$('#srvBox').classList.contains('hide')) SRV = srvIn;
-  TOKEN = $('#pwd').value.trim();
-  try {
-    const r = await fetch(SRV + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: TOKEN }) });
-    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Falhou');
-    store.set('nara_srv', SRV); store.set('nara_token', TOKEN);
-    start();
-  } catch (e) { $('#loginErr').textContent = '❌ ' + e.message + (SRV ? '' : ' — confira o endereço'); }
+const fileUrl = (rel) => '/files/' + String(rel).split('\\').join('/').split('/').map(encodeURIComponent).join('/') + '?t=' + encodeURIComponent(TOKEN);
+const refUrl = (name) => (name ? fileUrl('refs/' + name) : '');
+const nf = (n) => (n == null || isNaN(n) ? '—' : Number(n).toLocaleString('pt-BR'));
+const pct = (n) => (n == null || !isFinite(n) ? '—' : (n > 0 ? '+' : '') + n.toFixed(1).replace('.', ',') + '%');
+const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+function setPath(o, p, v) { const ks = p.split('.'); let x = o; ks.slice(0, -1).forEach((k) => (x = x[k] = x[k] || {})); x[ks[ks.length - 1]] = v; }
+const ICON = {
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
+  yt: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.8 15.1V8.9l5.7 3.1z"/></svg>',
+  ig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  film: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg>',
+  wave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-4 3 3 6-7"/></svg>',
 };
-$('#pwd').addEventListener('keydown', (e) => e.key === 'Enter' && $('#btnLogin').click());
-$('#btnLogout').onclick = () => { store.del('nara_token'); TOKEN = ''; showLogin(); };
+const STATUS = { queued: 'Na fila', producing: 'Produzindo', ready: 'Pronto p/ postar', publishing: 'Postando', done: 'Publicado', failed: 'Falhou', awaiting_approval: 'Aguardando aprovação', agendado: 'Agendado', atrasado: 'Atrasado', perdido: 'Perdido' };
+const TYPE = { video: 'Vídeo', carousel: 'Carrossel', image: 'Imagem' };
 
-// ---------- abas ----------
-$$('#nav button').forEach((b) => (b.onclick = () => {
-  $$('#nav button').forEach((x) => x.classList.toggle('active', x === b));
-  $$('[data-page]').forEach((p) => p.classList.toggle('hide', p.dataset.page !== b.dataset.tab));
-  store.set('nara_tab', b.dataset.tab);
-}));
+/* =================== login =================== */
+function logout() { TOKEN = ''; store.del('naraToken'); $('#app').classList.add('hidden'); $('#login').classList.remove('hidden'); }
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const t = $('#loginPass').value.trim();
+  try {
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t }) });
+    if (!r.ok) throw new Error('Senha errada');
+    TOKEN = t; store.set('naraToken', t); start();
+  } catch (err) { $('#loginErr').textContent = err.message; }
+});
 
-// ---------- helpers de formulário ----------
-function getPath(o, k) { return k.split('.').reduce((a, p) => (a == null ? a : a[p]), o); }
-function setPath(o, k, v) {
-  const ps = k.split('.'); let a = o;
-  ps.slice(0, -1).forEach((p, i) => { if (a[p] == null) a[p] = /^\d+$/.test(ps[i + 1]) ? [] : {}; a = a[p]; });
-  a[ps[ps.length - 1]] = v;
-}
-function fill(el, v) {
-  if (el.type === 'checkbox') el.checked = !!v;
-  else if (el.dataset.list) el.value = (v || []).join('\n');
-  else if (el.type === 'color') el.value = /^#[0-9a-f]{6}$/i.test(v || '') ? v : '#000000';
-  else el.value = v ?? '';
-}
-function read(el) {
-  if (el.type === 'checkbox') return el.checked;
-  if (el.type === 'number') return Number(el.value);
-  if (el.dataset.list) return el.value.split('\n').map((x) => x.trim()).filter(Boolean);
-  return el.value;
-}
-
-// ---------- estado ----------
+/* =================== estado =================== */
 async function refresh() {
-  try {
-    S = await api('/api/state');
-    $('#dot').classList.add('on');
-    $('#stxt').textContent = `online · ${S.now.time} · ${S.busy ? 'produzindo…' : 'livre'}`;
-    renderPainel(); renderSistema();
-    if (!dirty) { renderProfiles(); renderSettings(); }
-  } catch (e) {
-    $('#dot').classList.remove('on'); $('#stxt').textContent = 'sem conexão com o celular';
+  S = await api('/api/state');
+  const paused = S.settings.paused;
+  $('#statusChip').classList.toggle('off', paused);
+  $('#statusTxt').textContent = paused ? 'Pausada' : S.busy ? 'Produzindo…' : 'Rodando';
+  return S;
+}
+$('#statusChip').addEventListener('click', async () => {
+  const p = !S.settings.paused;
+  if (!confirm(p ? 'Pausar TODAS as postagens automáticas?' : 'Voltar a postar normalmente?')) return;
+  await api('/api/settings', { body: { paused: p } });
+  await refresh(); toast(p ? 'Postagens pausadas' : 'Postagens retomadas'); render();
+});
+const profById = (id) => S.profiles.find((p) => p.id === id);
+
+/* crescimento a partir do histórico diário */
+function series(pid, net) {
+  const h = S.statsHistory || {};
+  return Object.keys(h).sort().map((d) => ({ d, v: h[d][pid] && h[d][pid][net] ? h[d][pid][net].followers : null })).filter((x) => x.v != null);
+}
+function growth(pid, net, days) {
+  const s = series(pid, net);
+  if (s.length < 2) return null;
+  const last = s[s.length - 1];
+  const lim = new Date(last.d); lim.setDate(lim.getDate() - days);
+  const base = [...s].reverse().find((x) => new Date(x.d) <= lim) || s[0];
+  if (!base.v) return null;
+  return ((last.v - base.v) / base.v) * 100;
+}
+function followers(pid) {
+  const h = S.statsHistory || {}; const ds = Object.keys(h).sort().reverse();
+  const out = { yt: null, ig: null };
+  for (const d of ds) { const x = h[d][pid]; if (!x) continue; if (out.yt == null && x.youtube) out.yt = x.youtube.followers; if (out.ig == null && x.instagram) out.ig = x.instagram.followers; }
+  return out;
+}
+function totalSeries() {
+  const h = S.statsHistory || {};
+  return Object.keys(h).sort().slice(-30).map((d) => {
+    let t = 0;
+    for (const v of Object.values(h[d])) t += (v.youtube ? v.youtube.followers : 0) + (v.instagram ? v.instagram.followers : 0);
+    return { d, v: t };
+  });
+}
+function spark(vals, w = 600, h = 120) {
+  if (vals.length < 2) return `<div class="empty" style="padding:30px 0">O gráfico aparece depois de 2 dias de dados.</div>`;
+  const mn = Math.min(...vals), mx = Math.max(...vals), rg = mx - mn || 1;
+  const pts = vals.map((v, i) => [(i / (vals.length - 1)) * w, h - 10 - ((v - mn) / rg) * (h - 20)]);
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FF2E" stop-opacity=".35"/><stop offset="1" stop-color="#C8FF2E" stop-opacity="0"/></linearGradient></defs><path d="${line} L${w} ${h} L0 ${h}Z" fill="url(#gl)"/><path d="${line}" fill="none" stroke="#C8FF2E" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+/* =================== roteador =================== */
+let pollTimer = null;
+function current() { const h = location.hash.replace(/^#\/?/, '') || 'painel'; const [v, id] = h.split('/'); return { v, id }; }
+let skipHash = false;
+window.addEventListener('hashchange', () => {
+  if (skipHash) { skipHash = false; return; }
+  if (dirty && !confirm('Você tem alterações não salvas. Sair sem salvar?')) { skipHash = true; history.back(); return; }
+  setDirty(false); render(); window.scrollTo(0, 0);
+});
+function render() {
+  const { v, id } = current();
+  $$('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.v === (v === 'perfil' ? 'perfis' : v)));
+  const views = { painel: viewPainel, perfis: viewPerfis, perfil: () => viewPerfil(id), agenda: viewAgenda, nara: viewNara, ajustes: viewAjustes };
+  (views[v] || viewPainel)();
+}
+function setDirty(on, fn) {
+  dirty = on; if (fn) saveFn = fn;
+  $('#savebar').classList.toggle('show', on);
+}
+$('#saveBtn').addEventListener('click', () => saveFn && busy($('#saveBtn'), saveFn));
+$('#discardBtn').addEventListener('click', () => { setDirty(false); render(); });
+window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+/* =================== PAINEL =================== */
+function greeting() { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; }
+function viewPainel() {
+  const today = S.today || [];
+  const done = today.filter((s) => s.status === 'done').length;
+  const queue = S.jobs.filter((j) => ['queued', 'producing', 'publishing', 'ready'].includes(j.status));
+  const waiting = S.jobs.filter((j) => j.status === 'awaiting_approval');
+  let tot = 0, var1 = 0, hasVar = false;
+  for (const r of S.stats.perfis || []) {
+    if (r.youtube) { tot += r.youtube.inscritos || 0; if (r.youtube.variacao != null) { var1 += r.youtube.variacao; hasVar = true; } }
+    if (r.instagram) { tot += r.instagram.seguidores || 0; if (r.instagram.variacao != null) { var1 += r.instagram.variacao; hasVar = true; } }
   }
+  const ts = totalSeries();
+  const dt = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('#view').innerHTML = `
+  <div class="head">
+    <div><div class="label">${esc(dt)}</div><h1 class="h1">${greeting()}.</h1><p>${S.settings.paused ? '<span class="tag" style="background:var(--amber)">Postagens pausadas</span>' : `Hoje: <b>${done}</b> de <b>${today.length}</b> conteúdos publicados.`}</p></div>
+    <div class="row"><button class="btn" id="bBrief">${ICON.mic} Briefing falado</button><a class="btn pri" href="#/perfis">${ICON.plus} Produzir conteúdo</a></div>
+  </div>
+  <div class="grid g4">
+    <div class="card lime kpi rel"><div class="label">Seguidores (todos)</div><div class="num">${nf(tot)}</div><div class="var">${hasVar ? (var1 >= 0 ? '+' : '') + nf(var1) + ' desde ontem' : 'aguardando dados'}</div><span class="arrow">${ICON.arrow}</span></div>
+    <div class="card kpi rel"><div class="label">Publicados hoje</div><div class="num">${done}<span class="dim" style="font-size:.5em">/${today.length}</span></div><div class="var muted">${today.filter((s) => s.status === 'agendado').length} ainda agendados</div></div>
+    <div class="card kpi rel"><div class="label">Em produção</div><div class="num">${queue.length}</div><div class="var muted">${S.busy ? 'trabalhando agora' : 'fila livre'}</div></div>
+    <div class="card light kpi rel"><div class="label">Aguardando você</div><div class="num">${waiting.length}</div><div class="var muted">${waiting.length ? 'aprove abaixo' : 'nada pendente'}</div></div>
+  </div>
+  <div class="split" style="margin-top:16px">
+    <div class="card"><div class="cardh"><div><div class="label">Crescimento</div><h2 class="h2">Seguidores — 30 dias</h2></div><button class="btn sm" id="bStats">Atualizar números</button></div>${spark(ts.map((x) => x.v))}</div>
+    <div class="card"><div class="cardh"><div><div class="label">Hoje</div><h2 class="h2">Agenda</h2></div><a class="btn sm ghost" href="#/agenda">Ver tudo</a></div>
+      <div class="list">${today.slice(0, 6).map(slotRow).join('') || '<div class="empty">Nada agendado hoje. Crie um perfil e defina a frequência.</div>'}</div></div>
+  </div>
+  <div class="split" style="margin-top:16px">
+    <div class="card"><div class="cardh"><div><div class="label">Produção</div><h2 class="h2">Últimos conteúdos</h2></div></div><div class="list" id="jobs">${S.jobs.slice(0, 8).map(jobCard).join('') || '<div class="empty">Ainda não há conteúdos. Abra um perfil e clique em “Produzir agora”.</div>'}</div></div>
+    <div class="card" style="display:flex;flex-direction:column"><div class="cardh"><div><div class="label">Converse</div><h2 class="h2">Nara</h2></div><a class="btn sm ghost" href="#/nara">Abrir</a></div>
+      <div class="chat" id="chat" style="height:360px">${chatHtml()}</div>${composer()}</div>
+  </div>`;
+  bindChat(); bindJobs();
+  $('#bBrief').onclick = (e) => busy(e.currentTarget, async () => { const r = await api('/api/nara/briefing', { body: {} }); toast('A Nara está falando…'); await refresh(); renderChat(); return r; });
+  $('#bStats').onclick = (e) => busy(e.currentTarget, async () => { await api('/api/stats/refresh', { body: {} }); await refresh(); viewPainel(); toast('Números atualizados'); });
 }
-
-const TYPE = { video: '🎬 Vídeo', carousel: '🖼️ Carrossel', image: '🖼️ Imagem' };
-const ST = { queued: 'na fila', producing: 'produzindo', awaiting_approval: 'aguardando aprovação', ready: 'pronto p/ postar', publishing: 'postando', done: 'postado', failed: 'falhou', agendado: 'agendado', atrasado: 'atrasado' };
-function fileUrl(f) { return `${SRV}/files/${encodeURI(f)}?t=${encodeURIComponent(TOKEN)}`; }
-
-function renderPainel() {
-  // chat
-  const chat = $('#chat');
-  const atBottom = chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 20;
-  chat.innerHTML = S.conversation.map((m) => `<div class="msg ${m.role}">${esc(m.text)}</div>`).join('') || '<div class="hint">Diga “Nara, bom dia” ou peça algo.</div>';
-  if (atBottom) chat.scrollTop = chat.scrollHeight;
-  $('#btnPause').textContent = S.settings.paused ? '▶️ Retomar postagens' : '⏸️ Pausar tudo';
-  // agenda
-  $('#today').innerHTML = S.today.map((s) => `<div class="item"><div class="t">${s.time} · ${esc(s.profile)} · ${TYPE[s.type]}</div><div class="s"><span class="pill ${s.status}">${ST[s.status] || s.status}</span> ${esc(s.title || '')}</div></div>`).join('') || '<div class="hint">Nada agendado hoje. Configure em Perfis.</div>';
-  // stats
-  $('#stats').innerHTML = (S.stats.perfis || []).map((r) => {
-    const d = (v) => (v == null ? '' : v > 0 ? `<span class="up">+${v}</span>` : v < 0 ? `<span class="down">${v}</span>` : '<span>0</span>');
-    return `<div class="item"><div class="t">${esc(r.profile)}</div><div class="kpi">
-      ${r.youtube ? `<div><small>YouTube</small><b>${r.youtube.inscritos.toLocaleString('pt-BR')}</b>${d(r.youtube.variacao)}</div>` : ''}
-      ${r.instagram ? `<div><small>Instagram</small><b>${r.instagram.seguidores.toLocaleString('pt-BR')}</b>${d(r.instagram.variacao)}</div>` : ''}
-      ${!r.youtube && !r.instagram ? '<span class="hint">sem redes conectadas ou sem dados ainda</span>' : ''}</div></div>`;
-  }).join('') || '<div class="hint">Sem perfis.</div>';
-  // fila
-  const sel = $('#qProf'); const v = sel.value;
-  sel.innerHTML = S.profiles.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
-  if (v) sel.value = v;
-  $('#busy').textContent = S.busy ? 'trabalhando' : 'livre';
-  $('#jobs').innerHTML = S.jobs.map(jobHtml).join('') || '<div class="hint">Nenhuma produção ainda.</div>';
+function slotRow(s) {
+  return `<div class="item"><div class="time">${esc(s.time)}</div><div class="t"><b>${esc(s.title || s.profile)}</b><small>${esc(s.profile)} · ${TYPE[s.type] || s.type}</small></div><span class="st ${esc(s.status)}">${STATUS[s.status] || esc(s.status)}</span></div>`;
 }
-
-function jobHtml(j) {
-  const links = Object.entries(j.results || {}).map(([k, r]) => r.url ? `<a href="${esc(r.url)}" target="_blank">${k}</a>` : k).join(' · ');
+function jobCard(j) {
+  const files = j.files || [];
+  const isVid = j.type === 'video' && files[0];
+  const res = j.results || {};
   const m = j.metrics || {};
-  const met = [m.youtube && `YT ${m.youtube.views} views, ${m.youtube.likes} likes`, m.instagram && `IG ${m.instagram.views || 0} views, ${m.instagram.likes} curtidas`].filter(Boolean).join(' · ');
-  let prev = '';
-  if (j.files && j.files.length && ['awaiting_approval', 'failed', 'ready'].includes(j.status)) {
-    prev = j.type === 'video'
-      ? `<div class="preview"><video controls preload="none" src="${fileUrl(j.files[0])}"></video></div>`
-      : `<div class="preview">${j.files.map((f) => `<img loading="lazy" src="${fileUrl(f)}">`).join('')}</div>`;
-  }
-  return `<div class="item"><div class="t">${TYPE[j.type]} · ${esc(j.profileName)} <span class="pill ${j.status}">${ST[j.status] || j.status}</span></div>
-    <div class="s">${esc(j.title || j.topic || '(escolhendo tema)')} · ${new Date(j.createdAt).toLocaleString('pt-BR')} · ${esc(j.reason || '')}</div>
-    ${links ? `<div class="s">Postado: ${links}</div>` : ''}${met ? `<div class="s">📊 ${esc(met)}</div>` : ''}
-    ${j.error ? `<div class="s" style="color:var(--bad)">⚠️ ${esc(j.error)}</div>` : ''}
-    ${j.steps && j.steps.length && !['done'].includes(j.status) ? `<div class="s">${esc(j.steps[j.steps.length - 1])}</div>` : ''}
-    ${prev}${j.caption && j.status === 'awaiting_approval' ? `<div class="s" style="white-space:pre-wrap;margin-top:6px">${esc(j.caption)}</div>` : ''}
-    <div class="actions">
-      ${j.status === 'awaiting_approval' ? `<button class="btn sm" onclick="jobAct('${j.id}','approve')">✅ Aprovar e postar</button>` : ''}
-      ${j.status === 'failed' ? `<button class="btn sm sec" onclick="jobAct('${j.id}','retry')">↻ Tentar de novo</button>` : ''}
-      ${!['producing', 'publishing'].includes(j.status) ? `<button class="btn sm sec" onclick="jobDel('${j.id}')">Remover</button>` : ''}
-    </div></div>`;
+  const met = ['youtube', 'instagram'].filter((k) => m[k]).map((k) => `${k === 'youtube' ? 'YT' : 'IG'}: ${nf(m[k].views)} views · ${nf(m[k].likes)} curt.`).join(' — ');
+  return `<div class="job" data-id="${esc(j.id)}">
+    <div class="row between" style="flex-wrap:nowrap">
+      <div class="t" style="min-width:0;flex:1;cursor:pointer" data-act="toggle"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(j.title || j.topic || 'Escolhendo tema…')}</b>
+      <small class="muted">${esc(j.profileName)} · ${TYPE[j.type] || j.type} · ${new Date(j.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</small></div>
+      <span class="st ${esc(j.status)}">${STATUS[j.status] || esc(j.status)}</span>
+    </div>
+    ${met ? `<div class="muted" style="font-size:12.5px;margin-top:6px">${esc(met)}</div>` : ''}
+    ${j.error ? `<div class="err">${esc(j.error)}</div>` : ''}
+    <div class="row" style="margin-top:10px">
+      ${j.status === 'awaiting_approval' ? `<button class="btn sm pri" data-act="approve">Aprovar e postar</button>` : ''}
+      ${j.status === 'failed' ? `<button class="btn sm" data-act="retry">Tentar de novo</button>` : ''}
+      ${files.length ? `<button class="btn sm" data-act="view">${ICON.play} Ver</button>` : ''}
+      ${res.youtube && res.youtube.url ? `<a class="btn sm ghost" target="_blank" href="${esc(res.youtube.url)}">${ICON.yt} YouTube</a>` : ''}
+      ${res.instagram && res.instagram.permalink ? `<a class="btn sm ghost" target="_blank" href="${esc(res.instagram.permalink)}">${ICON.ig} Instagram</a>` : ''}
+      <button class="btn sm ghost" data-act="toggle">Detalhes</button>
+      <button class="btn sm danger" data-act="del">Apagar</button>
+    </div>
+    <div class="media"></div>
+    <div class="steps">${(j.steps || []).map(esc).join('<br>')}${j.caption ? '<hr class="sep">' + esc(j.caption) : ''}</div>
+  </div>`;
 }
-async function jobAct(id, act) { try { await api(`/api/jobs/${id}/${act}`, { method: 'POST' }); toast('Ok!'); refresh(); } catch (e) { toast('❌ ' + e.message); } }
-async function jobDel(id) { if (!confirm('Remover esta produção?')) return; await api(`/api/jobs/${id}`, { method: 'DELETE' }); refresh(); }
+function bindJobs(root = document) {
+  $$('.job', root).forEach((el) => el.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const id = el.dataset.id; const j = S.jobs.find((x) => x.id === id) || {};
+    const act = b.dataset.act;
+    if (act === 'toggle') return el.classList.toggle('open');
+    if (act === 'view') {
+      const box = $('.media', el);
+      if (box.innerHTML) { box.innerHTML = ''; return; }
+      box.innerHTML = j.type === 'video' ? `<video controls autoplay playsinline src="${fileUrl(j.files[0])}" style="max-height:70vh"></video>` : `<div class="imgs">${j.files.map((f) => `<img src="${fileUrl(f)}" loading="lazy">`).join('')}</div>`;
+      return;
+    }
+    if (act === 'del' && !confirm('Apagar este conteúdo e os arquivos dele?')) return;
+    await busy(b, async () => {
+      if (act === 'del') await api(`/api/jobs/${id}`, { method: 'DELETE' });
+      else await api(`/api/jobs/${id}/${act}`, { body: {} });
+      await refresh(); render(); toast(act === 'approve' ? 'Aprovado! Postando…' : act === 'retry' ? 'Tentando de novo…' : 'Apagado');
+    });
+  }));
+}
 
-$('#btnProduce').onclick = async () => {
-  if (!$('#qProf').value) return toast('Crie um perfil primeiro');
-  try { await api('/api/jobs', { method: 'POST', body: { profileId: $('#qProf').value, type: $('#qType').value, topic: $('#qTopic').value } }); $('#qTopic').value = ''; toast('Produção iniciada! Acompanhe abaixo.'); refresh(); } catch (e) { toast('❌ ' + e.message); }
-};
-async function sendCmd(text) {
-  if (!text) return;
-  S.conversation.push({ role: 'voce', text }); renderPainel();
-  $('#cmd').value = ''; $('#btnCmd').disabled = true;
-  try { await api('/api/nara/command', { method: 'POST', body: { text } }); } catch (e) { toast('❌ ' + e.message); }
-  $('#btnCmd').disabled = false; refresh();
+/* =================== conversa =================== */
+function chatHtml() {
+  const c = S.conversation || [];
+  if (!c.length) return '<div class="empty">Diga “Nara, bom dia” ou peça algo: “posta um vídeo extra no perfil X”, “muda o perfil Y para 3 vídeos por dia”.</div>';
+  return c.map((m) => `<div class="msg ${m.role === 'voce' ? 'voce' : 'nara'}">${esc(m.text)}<small>${new Date(m.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</small></div>`).join('');
 }
-$('#btnCmd').onclick = () => sendCmd($('#cmd').value.trim());
-$('#cmd').addEventListener('keydown', (e) => e.key === 'Enter' && $('#btnCmd').click());
-$('#btnBrief').onclick = async () => { toast('A Nara está preparando o briefing…'); try { await api('/api/nara/briefing', { method: 'POST' }); } catch (e) { toast('❌ ' + e.message); } refresh(); };
-$('#btnStats').onclick = async () => { toast('Buscando números nas redes…'); try { await api('/api/stats/refresh', { method: 'POST' }); toast('Atualizado!'); } catch (e) { toast('❌ ' + e.message); } refresh(); };
-$('#btnPause').onclick = async () => { await api('/api/settings', { method: 'POST', body: { paused: !S.settings.paused } }); refresh(); };
+function composer() { return `<form class="composer" id="chatForm"><input id="chatIn" type="text" placeholder="Fale com a Nara…" autocomplete="off"><button class="btn pri" style="padding:12px 16px" aria-label="Enviar">${ICON.send}</button></form>`; }
+function renderChat() { const c = $('#chat'); if (!c) return; c.innerHTML = chatHtml(); c.scrollTop = c.scrollHeight; }
+function bindChat() {
+  renderChat();
+  const f = $('#chatForm'); if (!f) return;
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const t = $('#chatIn').value.trim(); if (!t) return;
+    $('#chatIn').value = '';
+    S.conversation.push({ role: 'voce', text: t, at: new Date().toISOString() });
+    S.conversation.push({ role: 'nara', text: '…', at: new Date().toISOString() });
+    renderChat();
+    try { await api('/api/nara/command', { body: { text: t } }); } catch (err) { toast(err.message, true); }
+    await refresh(); renderChat();
+  });
+}
 
-// ---------- perfis ----------
-function curProf() { return S.profiles.find((p) => p.id === curProfId) || S.profiles[0]; }
-function renderProfiles() {
-  const sel = $('#profSel');
-  sel.innerHTML = S.profiles.map((p) => `<option value="${p.id}">${esc(p.name)}${p.enabled ? '' : ' (pausado)'}</option>`).join('');
-  const p = curProf();
-  $('#profEmpty').classList.toggle('hide', !!p);
-  $('#profForm').classList.toggle('hide', !p);
-  if (!p) return;
-  curProfId = p.id; sel.value = p.id;
-  $$('#profForm [data-k]').forEach((el) => fill(el, getPath(p, el.dataset.k)));
-  $('#refBox').innerHTML = p.referenceImage ? `<img src="${fileUrl('refs/' + p.referenceImage)}"><div class="actions"><button class="btn sm sec" onclick="removeRef()">Remover referência</button></div>` : '';
-  $('#ytStatus').textContent = p.youtube.refreshToken ? `✅ Conectado: ${p.youtube.channelTitle || 'canal'}` : '⚪ Não conectado';
-  $('#igStatus').textContent = p.instagram.username ? '@' + p.instagram.username : '';
-  $('#boostInfo').textContent = p.boost && p.boost.until && p.boost.until >= S.now.date ? `🔥 Foco ativo: +${p.boost.extraVideos} vídeo(s)/dia até ${p.boost.until}` : '';
-  slotPreview();
+/* =================== PERFIS (biblioteca) =================== */
+function viewPerfis() {
+  $('#view').innerHTML = `
+  <div class="head"><div><div class="label">Biblioteca</div><h1 class="h1">Perfis<span style="color:var(--lime)">.</span></h1><p>Cada perfil é um canal: configure uma vez e a Nara cuida do resto.</p></div>
+  <button class="btn pri" id="bNew">${ICON.plus} Novo perfil</button></div>
+  <div class="lib">${S.profiles.map(coverCard).join('')}
+    <a class="cover new" id="bNew2"><div class="plus">+</div><b>Novo perfil</b><small class="muted">YouTube, Instagram ou os dois</small></a>
+  </div>`;
+  $('#bNew').onclick = newProfile; $('#bNew2').onclick = newProfile;
 }
-async function slotPreview() {
-  const p = curProf(); if (!p) return;
-  try {
+function coverCard(p) {
+  const f = followers(p.id);
+  const g = growth(p.id, 'instagram', 7) ?? growth(p.id, 'youtube', 7);
+  const yt = p.youtube.enabled && p.youtube.refreshToken, ig = p.instagram.enabled && p.instagram.accessToken;
+  return `<a class="cover" href="#/perfil/${esc(p.id)}">
+    ${p.coverImage ? `<img class="bg" src="${refUrl(p.coverImage)}" alt="">` : `<div class="ph">${esc((p.name || '?')[0].toUpperCase())}</div>`}
+    <div class="shade"></div>
+    <div class="badges"><span class="row" style="gap:5px">${p.enabled ? '' : '<span class="mini off">Pausado</span>'}<span class="mini ${yt ? 'ok' : 'off'}">${ICON.yt.replace('<svg', '<svg width="12" height="12"')} YT</span><span class="mini ${ig ? 'ok' : 'off'}">${ICON.ig.replace('<svg', '<svg width="12" height="12"')} IG</span></span>${p.logoImage ? `<img class="lg" src="${refUrl(p.logoImage)}" alt="">` : ''}</div>
+    <div class="info"><span class="tag">${esc(p.videoFormat === 'long' ? 'Vídeo longo' : 'Shorts / Reels')}</span><div class="nm">${esc(p.name)}</div><div class="sub">${esc(p.niche || 'Sem nicho definido')}</div>
+      <div class="stats"><span><b>${nf((f.yt || 0) + (f.ig || 0))}</b> seg.</span><span class="${g == null ? 'muted' : g >= 0 ? 'up' : 'down'}"><b>${pct(g)}</b> 7d</span><span><b>${p.videosPerDay}</b> víd/dia</span></div></div>
+  </a>`;
+}
+function newProfile() {
+  modal(`<div class="label">Novo perfil</div><h2 class="h2" style="margin:6px 0 16px">Como se chama?</h2>
+    <form id="npf" class="fields"><label class="field"><span>Nome do perfil / canal</span><input id="npName" type="text" placeholder="Ex.: Casos Reais" required></label>
+    <label class="field"><span>Sobre o que é? (nicho)</span><input id="npNiche" type="text" placeholder="Ex.: crimes reais e mistérios não resolvidos"></label>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" data-close>Cancelar</button><button class="btn pri">Criar e configurar</button></div></form>`);
+  $('#npName').focus();
+  $('#npf').onsubmit = async (e) => {
+    e.preventDefault();
+    const r = await api('/api/profiles', { body: { name: $('#npName').value.trim(), niche: $('#npNiche').value.trim() } }).catch((err) => toast(err.message, true));
+    if (!r) return;
+    closeModal(); await refresh(); location.hash = '#/perfil/' + r.profile.id;
+  };
+}
+function modal(html) { closeModal(); const m = document.createElement('div'); m.className = 'modal'; m.id = 'modal'; m.innerHTML = `<div class="card">${html}</div>`; document.body.appendChild(m); m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('[data-close]')) closeModal(); }); }
+function closeModal() { const m = $('#modal'); if (m) m.remove(); }
+
+/* =================== PERFIL (detalhes) =================== */
+const TONES = [
+  ['Documentário', 'Fale em português do Brasil, com ritmo firme e tom de narrador de documentário.'],
+  ['Suspense', 'Fale em português do Brasil, em tom de suspense e mistério, voz mais baixa e pausas dramáticas.'],
+  ['Animado', 'Fale em português do Brasil, animado e rápido, com muita energia, como um youtuber.'],
+  ['Calmo', 'Fale em português do Brasil, calmo e acolhedor, em ritmo tranquilo.'],
+  ['Jornal', 'Fale em português do Brasil, como um apresentador de telejornal, claro e objetivo.'],
+  ['Divertido', 'Fale em português do Brasil, descontraído e bem-humorado.'],
+  ['Épico', 'Fale em português do Brasil, com voz grave e épica, como um trailer de cinema.'],
+];
+const YT_CATS = [['1', 'Filmes e animação'], ['10', 'Música'], ['15', 'Animais'], ['17', 'Esportes'], ['19', 'Viagens'], ['20', 'Jogos'], ['22', 'Pessoas e blogs'], ['23', 'Comédia'], ['24', 'Entretenimento'], ['25', 'Notícias e política'], ['26', 'Estilo e dicas'], ['27', 'Educação'], ['28', 'Ciência e tecnologia']];
+const FONTS = ['Anton', 'Bebas Neue', 'Poppins', 'Montserrat', 'Roboto'];
+
+function fld(label, f, type = 'text', extra = {}) {
+  const v = getPath(DRAFT, f);
+  const help = extra.help ? `<small>${extra.help}</small>` : '';
+  if (type === 'textarea') return `<label class="field"><span>${label}</span><textarea data-f="${f}" class="${extra.big ? 'big' : ''}" placeholder="${esc(extra.ph || '')}">${esc(v)}</textarea>${help}</label>`;
+  if (type === 'select') return `<label class="field"><span>${label}</span><select data-f="${f}">${extra.opts.map(([k, t]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>${help}</label>`;
+  if (type === 'switch') return `<label class="switch"><span><b>${label}</b>${extra.help ? `<small>${extra.help}</small>` : ''}</span><input type="checkbox" data-f="${f}" ${v ? 'checked' : ''}></label>`;
+  if (type === 'color') return `<label class="field"><span>${label}</span><span class="row" style="flex-wrap:nowrap"><input type="color" data-f="${f}" value="${esc(v || '#ffffff')}"><input type="text" data-fc="${f}" value="${esc(v || '')}" style="font-family:var(--mono)"></span></label>`;
+  return `<label class="field"><span>${label}</span><input type="${type}" data-f="${f}" value="${esc(v ?? '')}" placeholder="${esc(extra.ph || '')}" ${type === 'number' ? `min="${extra.min ?? 0}" max="${extra.max ?? 999}"` : ''}>${help}</label>`;
+}
+function dropzone(kind, file, title, hint, contain = true) {
+  return `<div class="drop ${file ? 'has' : ''}" data-kind="${kind}">${file ? `<img src="${refUrl(file)}" style="object-fit:${contain ? 'contain' : 'cover'}"><button class="btn sm x" data-rm="${kind}">Remover</button>` : ''}<div class="msg"><b>${title}</b>${hint}<br><span style="color:var(--lime)">Clique ou arraste a imagem aqui</span></div><input type="file" accept="image/png,image/jpeg,image/webp" hidden></div>`;
+}
+
+async function viewPerfil(id) {
+  const p = profById(id);
+  if (!p) { $('#view').innerHTML = '<div class="empty">Perfil não encontrado. <a href="#/perfis">Voltar</a></div>'; return; }
+  if (!VOICES) VOICES = await api('/api/voices').catch(() => ({ google: [], nara: [] }));
+  DRAFT = structuredClone(p);
+  const tab = sessionStorage.getItem('ptab') || 'id';
+  $('#view').innerHTML = `<div id="pwrap">
+  <a class="back" href="#/perfis">${ICON.back} Todos os perfis</a>
+  <section class="hero">
+    ${p.coverImage ? `<img class="bg" src="${refUrl(p.coverImage)}" alt="">` : ''}<div class="shade"></div>
+    <div class="in">
+      ${p.logoImage ? `<img class="lg" src="${refUrl(p.logoImage)}" alt="">` : `<div class="lgph">sem logo</div>`}
+      <div style="flex:1;min-width:220px"><div class="label">${esc(p.niche || 'Perfil')}</div><h1 class="h1" style="font-size:clamp(40px,6vw,76px)">${esc(p.name)}</h1>
+        <div class="row" style="margin-top:12px">
+          <span class="chip">${ICON.yt.replace('<svg', '<svg width="14" height="14"')} ${p.youtube.refreshToken ? esc(p.youtube.channelTitle || 'Conectado') : 'YouTube não conectado'}</span>
+          <span class="chip">${ICON.ig.replace('<svg', '<svg width="14" height="14"')} ${p.instagram.username ? '@' + esc(p.instagram.username) : p.instagram.accessToken ? 'Token salvo' : 'Instagram não conectado'}</span>
+        </div></div>
+      <div class="row">
+        <button class="btn pri" data-make="video">${ICON.film} Produzir vídeo agora</button>
+        <button class="btn white" data-make="carousel">${ICON.layers} Carrossel agora</button>
+      </div>
+    </div>
+  </section>
+  <div id="pdash" style="margin-top:16px"></div>
+  <div class="tabs" id="ptabs">
+    <button data-t="id">${ICON.user} Identidade</button><button data-t="video">${ICON.film} Vídeo</button><button data-t="voz">${ICON.wave} Voz</button>
+    <button data-t="car">${ICON.layers} Carrossel</button><button data-t="freq">${ICON.cal} Frequência</button><button data-t="pub">${ICON.send} Publicação</button>
+  </div>
+  <div id="panes">
+    <section class="pane" data-p="id">
+      <div class="grid g2">
+        <div class="card"><div class="cardh"><h2 class="h2">Quem é este perfil</h2></div><div class="fields">
+          ${fld('Nome', 'name')}
+          ${fld('Nicho / assunto', 'niche', 'text', { ph: 'Ex.: crimes reais, mistérios, curiosidades históricas' })}
+          ${fld('Público', 'audience', 'text', { ph: 'Ex.: adultos 18–40 que gostam de investigação' })}
+          ${fld('Tom do conteúdo', 'tone')}
+          ${fld('Evitar', 'avoid', 'text', { ph: 'Assuntos ou palavras que a Nara nunca deve usar' })}
+          ${fld('Fila de temas (opcional — 1 por linha)', '__topics', 'textarea', { help: 'Se ficar vazia, a Nara pesquisa sozinha temas novos, seguindo o que dá mais engajamento.' })}
+          ${fld('Ativo', 'enabled', 'switch', { help: 'Desligado = este perfil para de produzir.' })}
+        </div></div>
+        <div class="grid" style="align-content:start">
+          <div class="card"><div class="cardh"><h2 class="h2">Capa</h2><span class="label">biblioteca</span></div>${dropzone('cover', p.coverImage, 'Capa do perfil', 'Aparece na biblioteca de perfis (vertical fica melhor).', false)}</div>
+          <div class="card"><div class="cardh"><h2 class="h2">Logo do canal</h2><span class="label">chamada final</span></div>${dropzone('logo', p.logoImage, 'Logo', 'PNG com fundo transparente fica perfeito.')}
+            <div class="fields" style="margin-top:14px">${fld('Mostrar a logo no final dos vídeos', 'endCard', 'switch', { help: '3 segundos de chamada final com a logo e a frase abaixo.' })}
+            ${fld('Frase da chamada final', 'endCardText', 'text', { ph: 'Siga para mais!' })}
+            ${fld('Logo pequena no canto durante o vídeo', 'watermark', 'switch')}</div></div>
+        </div>
+      </div>
+    </section>
+    <section class="pane" data-p="video">
+      <div class="grid g2">
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Prompt padrão do vídeo</h2><p class="muted" style="margin:6px 0 0">Cole aqui o seu prompt do estilo de vídeo. A IA só troca o assunto e o roteiro a cada vídeo.</p></div></div>
+          ${fld('', 'videoPrompt', 'textarea', { big: true, ph: 'Ex.: Vídeo estilo investigação 2D, narrador em suspense, começa com uma pergunta, revela o caso aos poucos...' })}</div>
+        <div class="card"><div class="cardh"><h2 class="h2">Formato e duração</h2></div><div class="fields">
+          <div class="field"><span>Duração de cada vídeo</span><div class="row" style="flex-wrap:nowrap"><input type="number" id="durMin" min="0" max="60" value="${Math.floor((p.videoSeconds || 0) / 60)}" style="max-width:110px"><span class="muted">min</span><input type="number" id="durSec" min="0" max="59" value="${(p.videoSeconds || 0) % 60}" style="max-width:110px"><span class="muted">seg</span></div><small>Shorts e Reels: até 1 min (máx. 3 min). Vídeo longo: o tempo que quiser.</small></div>
+          ${fld('Formato', 'videoFormat', 'select', { opts: [['short', 'Vertical 9:16 — Shorts / Reels'], ['long', 'Horizontal 16:9 — YouTube longo']] })}
+          ${fld('Estilo visual', 'videoStyle', 'select', { opts: [['2d', '2D ilustrado'], ['3d', '3D'], ['realista', 'Realista (fotos)'], ['documentario', 'Documentário / investigação'], ['anime', 'Anime'], ['minimalista', 'Minimalista']] })}
+          ${fld('De onde vêm as imagens', 'imageSource', 'select', { opts: [['mix', 'Misto (internet + IA)'], ['web', 'Só fotos reais da internet'], ['ai', 'Só geradas por IA']] })}
+          ${fld('Música de fundo', 'music', 'switch', { help: 'Coloque MP3 sem direitos autorais em server\\data\\music' })}
+        </div></div>
+        <div class="card"><div class="cardh"><h2 class="h2">Referência de layout</h2><span class="label">a IA copia o estilo</span></div>
+          ${dropzone('reference', p.referenceImage, 'Imagem de referência do vídeo', 'Um frame do estilo que você quer.')}
+          ${p.styleAnalysis ? `<div class="analysis"><b>O que a Claude entendeu:</b> ${esc(p.styleAnalysis)}</div>` : ''}</div>
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><h2 class="h2">Legendas</h2><span class="label">palavra em destaque</span></div><div class="fields f4">
+          ${fld('Fonte', 'subtitle.font', 'select', { opts: FONTS.map((f) => [f, f]) })}
+          ${fld('Tamanho', 'subtitle.size', 'number', { min: 30, max: 160 })}
+          ${fld('Posição', 'subtitle.position', 'select', { opts: [['top', 'Em cima'], ['middle', 'No meio'], ['bottom', 'Embaixo']] })}
+          ${fld('Palavras por vez', 'subtitle.wordsPerLine', 'number', { min: 1, max: 8 })}
+          ${fld('Cor do texto', 'subtitle.color', 'color')}${fld('Cor do destaque', 'subtitle.highlight', 'color')}${fld('Contorno', 'subtitle.outline', 'color')}
+          ${fld('LETRAS MAIÚSCULAS', 'subtitle.uppercase', 'switch')}
+        </div></div>
+      </div>
+    </section>
+    <section class="pane" data-p="voz">
+      <div class="grid g2">
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Voz da narração</h2><p class="muted" style="margin:6px 0 0">Vozes do Google AI Studio (grátis). Clique para escolher e ouça uma amostra.</p></div><span class="chip">Escolhida: <b id="vName" style="color:var(--lime)">${esc(p.voice)}</b></span></div>
+          <div class="voices" id="voices">${(VOICES.google || []).map((v) => `<div class="voice ${v.name === p.voice ? 'on' : ''}" data-v="${esc(v.name)}"><span class="g">${esc(v.gender)}</span><b>${esc(v.name)}</b><small>${esc(v.desc)}</small></div>`).join('')}</div></div>
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><h2 class="h2">Tom da voz</h2></div>
+          <div class="pills" id="tones" style="margin-bottom:14px">${TONES.map(([n, t]) => `<button class="pill ${p.voiceStyle === t ? 'on' : ''}" data-tone="${esc(t)}">${n}</button>`).join('')}</div>
+          ${fld('Como ela deve falar (você pode escrever do seu jeito)', 'voiceStyle', 'textarea')}
+          <div class="row" style="margin-top:14px"><input type="text" id="vText" placeholder="Frase para testar (opcional)" style="flex:1;min-width:200px"><button class="btn pri" id="bPrev">${ICON.play} Ouvir amostra</button></div>
+          <small class="muted" style="display:block;margin-top:8px">A amostra usa um pouquinho da cota grátis do Google.</small></div>
+      </div>
+    </section>
+    <section class="pane" data-p="car">
+      <div class="grid g2">
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Prompt padrão do carrossel</h2><p class="muted" style="margin:6px 0 0">A IA só troca o assunto e cria os posts.</p></div></div>
+          ${fld('', 'carouselPrompt', 'textarea', { big: true, ph: 'Ex.: Carrossel educativo, slide 1 com pergunta chocante, fundo escuro, texto curto...' })}</div>
+        <div class="card"><div class="cardh"><h2 class="h2">Referência do carrossel</h2></div>
+          ${dropzone('carousel', p.carouselReference, 'Imagem de referência dos posts', 'Se não enviar, usa a referência do vídeo.')}
+          ${p.carouselStyleAnalysis ? `<div class="analysis"><b>O que a Claude entendeu:</b> ${esc(p.carouselStyleAnalysis)}</div>` : ''}</div>
+        <div class="card"><div class="cardh"><h2 class="h2">Detalhes</h2></div><div class="fields">
+          ${fld('Número de slides', 'carouselSlides', 'number', { min: 2, max: 10 })}
+          ${fld('Fonte dos slides', 'carouselFont', 'select', { opts: FONTS.map((f) => [f, f]) })}
+          ${fld('Como escrever a legenda', 'captionPrompt', 'textarea')}
+          ${fld('Hashtags fixas', 'hashtags', 'text', { ph: '#misterio #casosreais' })}
+        </div></div>
+      </div>
+    </section>
+    <section class="pane" data-p="freq">
+      <div class="grid g2">
+        <div class="card"><div class="cardh"><h2 class="h2">Quanto postar</h2></div><div class="fields">
+          <div class="fields f3">${fld('Vídeos / dia', 'videosPerDay', 'number', { max: 20 })}${fld('Carrosséis / dia', 'carouselsPerDay', 'number', { max: 20 })}${fld('Imagens / dia', 'imagesPerDay', 'number', { max: 20 })}</div>
+          <div class="field"><span>Dias da semana</span><div class="days" id="days">${['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => `<button type="button" data-d="${i}" class="${(p.days || []).includes(i) ? 'on' : ''}" title="${['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][i]}">${d}</button>`).join('')}</div></div>
+          <div class="fields f2">${fld('Começa às', 'windowStart', 'time')}${fld('Termina às', 'windowEnd', 'time')}</div>
+          ${fld('Horários fixos (opcional)', 'customTimes', 'text', { ph: '09:00, 12:30, 19:00', help: 'Se preencher, os vídeos saem exatamente nesses horários.' })}
+          ${fld('Postar sozinha', 'autoPost', 'switch', { help: 'Desligado = fica no Painel esperando você aprovar.' })}
+          ${fld('Seguir o engajamento', 'learnFromResults', 'switch', { help: 'Assuntos que dão mais views/curtidas viram prioridade; os fracos são trocados (sempre dentro do nicho).' })}
+        </div></div>
+        <div class="card"><div class="cardh"><h2 class="h2">Prévia de hoje</h2><button class="btn sm" id="bPrevSched">Atualizar</button></div><div class="list" id="schedPrev"><div class="empty">Salve e clique em atualizar.</div></div></div>
+      </div>
+    </section>
+    <section class="pane" data-p="pub">
+      <div class="grid g2">
+        <div class="card"><div class="cardh"><h2 class="h2">${ICON.yt.replace('<svg', '<svg width="26" height="26" style="color:#FF3B30;vertical-align:-4px"')} YouTube</h2>${p.youtube.refreshToken ? '<span class="st done">Conectado</span>' : '<span class="st">Não conectado</span>'}</div><div class="fields">
+          ${fld('Postar vídeos no YouTube', 'youtube.enabled', 'switch')}
+          <div class="row"><button class="btn ${p.youtube.refreshToken ? '' : 'pri'}" id="bYt">${p.youtube.refreshToken ? 'Trocar canal' : 'Conectar canal do YouTube'}</button>${p.youtube.channelTitle ? `<span class="muted">${esc(p.youtube.channelTitle)}</span>` : ''}</div>
+          <div class="fields f2">${fld('Visibilidade', 'youtube.privacy', 'select', { opts: [['public', 'Público'], ['unlisted', 'Não listado'], ['private', 'Privado']] })}
+          ${fld('Categoria', 'youtube.categoryId', 'select', { opts: YT_CATS })}</div>
+          ${fld('Conteúdo feito para crianças', 'youtube.madeForKids', 'switch')}
+          ${fld('Regras para o YouTube', 'youtube.rules', 'textarea', { ph: 'Ex.: títulos com palavra-chave no começo, descrição com fontes, sem palavrões.' })}
+        </div></div>
+        <div class="card"><div class="cardh"><h2 class="h2">${ICON.ig.replace('<svg', '<svg width="24" height="24" style="color:#E1306C;vertical-align:-4px"')} Instagram</h2>${p.instagram.username ? `<span class="st done">@${esc(p.instagram.username)}</span>` : '<span class="st">Não conectado</span>'}</div><div class="fields">
+          ${fld('Postar no Instagram', 'instagram.enabled', 'switch')}
+          ${fld('Token do Instagram', 'instagram.accessToken', 'password', { ph: 'IGAA…', help: 'Gerado no app da Meta (passo a passo em Ajustes → Como conectar).' })}
+          <div class="row"><button class="btn" id="bIg">Testar conexão</button></div>
+          <div class="fields f3">${fld('Reels', 'instagram.reels', 'switch')}${fld('Carrosséis', 'instagram.carousels', 'switch')}${fld('Imagens', 'instagram.images', 'switch')}</div>
+          ${fld('Reels também no feed', 'instagram.shareToFeed', 'switch')}
+          ${fld('Regras para o Instagram', 'instagram.rules', 'textarea', { ph: 'Ex.: legenda curta com pergunta no fim, 10 hashtags, sem link.' })}
+        </div></div>
+      </div>
+    </section>
+  </div></div>`;
+  // fila de temas (array <-> texto)
+  $('[data-f="__topics"]').value = (DRAFT.topics || []).join('\n');
+  bindProfile(p);
+  showTab(tab);
+  renderProfileDash(p);
+}
+function showTab(t) {
+  sessionStorage.setItem('ptab', t);
+  $$('#ptabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+  $$('#panes .pane').forEach((s) => s.classList.toggle('on', s.dataset.p === t));
+}
+function renderProfileDash(p) {
+  const f = followers(p.id);
+  const g7 = growth(p.id, 'youtube', 7), g30 = growth(p.id, 'youtube', 30), i7 = growth(p.id, 'instagram', 7), i30 = growth(p.id, 'instagram', 30);
+  const posts = S.jobs.filter((j) => j.profileId === p.id && j.status === 'done');
+  const views = posts.map((j) => ((j.metrics && j.metrics.youtube && j.metrics.youtube.views) || 0) + ((j.metrics && j.metrics.instagram && j.metrics.instagram.views) || 0));
+  const avg = views.length ? views.reduce((a, b) => a + b, 0) / views.length : null;
+  const ser = series(p.id, 'instagram').length >= 2 ? series(p.id, 'instagram') : series(p.id, 'youtube');
+  const top = posts.map((j, i) => ({ j, v: views[i] })).sort((a, b) => b.v - a.v).slice(0, 4);
+  const mx = Math.max(1, ...top.map((x) => x.v));
+  $('#pdash').innerHTML = `<div class="grid g4">
+    <div class="card kpi"><div class="label">Inscritos YouTube</div><div class="num">${nf(f.yt)}</div><div class="var ${g7 == null ? 'muted' : g7 >= 0 ? 'up' : 'down'}">${pct(g7)} em 7 dias · ${pct(g30)} em 30</div></div>
+    <div class="card kpi"><div class="label">Seguidores Instagram</div><div class="num">${nf(f.ig)}</div><div class="var ${i7 == null ? 'muted' : i7 >= 0 ? 'up' : 'down'}">${pct(i7)} em 7 dias · ${pct(i30)} em 30</div></div>
+    <div class="card kpi lime"><div class="label">Média de views por post</div><div class="num">${avg == null ? '—' : nf(Math.round(avg))}</div><div class="var">${posts.length} posts recentes</div></div>
+    <div class="card kpi"><div class="label">Crescimento</div>${spark(ser.map((x) => x.v), 300, 80)}</div>
+  </div>
+  ${top.length ? `<div class="card" style="margin-top:16px"><div class="cardh"><h3 class="h3">Melhores assuntos (a Nara segue estes)</h3><span class="label">views</span></div><div class="list">${top.map((x) => `<div class="item"><div class="t"><b>${esc(x.j.title)}</b><div style="height:6px;border-radius:6px;background:var(--panel3);margin-top:8px"><div style="height:6px;border-radius:6px;background:var(--lime);width:${Math.max(3, (x.v / mx) * 100)}%"></div></div></div><b>${nf(x.v)}</b></div>`).join('')}</div></div>` : ''}`;
+}
+function bindProfile(p) {
+  const root = $('#pwrap');
+  const mark = () => setDirty(true, saveProfile);
+  $$('#ptabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.t)));
+  root.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el.dataset.f) {
+      if (el.dataset.f === '__topics') DRAFT.topics = el.value.split('\n').map((x) => x.trim()).filter(Boolean);
+      else if (el.type === 'checkbox') setPath(DRAFT, el.dataset.f, el.checked);
+      else if (el.type === 'number') setPath(DRAFT, el.dataset.f, Number(el.value));
+      else setPath(DRAFT, el.dataset.f, el.value);
+      if (el.type === 'color') { const t = $(`[data-fc="${el.dataset.f}"]`); if (t) t.value = el.value; }
+      if (el.dataset.f === 'voiceStyle') $$('#tones .pill').forEach((x) => x.classList.toggle('on', x.dataset.tone === el.value));
+      mark();
+    } else if (el.dataset.fc) {
+      if (/^#[0-9a-f]{6}$/i.test(el.value)) { setPath(DRAFT, el.dataset.fc, el.value); $(`[data-f="${el.dataset.fc}"]`).value = el.value; mark(); }
+    } else if (el.id === 'durMin' || el.id === 'durSec') {
+      DRAFT.videoSeconds = Math.max(10, (Number($('#durMin').value) || 0) * 60 + (Number($('#durSec').value) || 0)); mark();
+    }
+  });
+  root.addEventListener('change', (e) => { if (e.target.dataset.f && (e.target.type === 'checkbox' || e.target.tagName === 'SELECT')) e.target.dispatchEvent(new Event('input', { bubbles: true })); });
+  $$('#days button').forEach((b) => (b.onclick = () => {
+    b.classList.toggle('on');
+    DRAFT.days = $$('#days button.on').map((x) => Number(x.dataset.d)); mark();
+  }));
+  $$('#voices .voice').forEach((v) => (v.onclick = () => {
+    $$('#voices .voice').forEach((x) => x.classList.remove('on')); v.classList.add('on');
+    DRAFT.voice = v.dataset.v; $('#vName').textContent = v.dataset.v; mark();
+  }));
+  $$('#tones .pill').forEach((b) => (b.onclick = () => {
+    const ta = $('[data-f="voiceStyle"]'); ta.value = b.dataset.tone; ta.dispatchEvent(new Event('input', { bubbles: true }));
+  }));
+  $('#bPrev').onclick = (e) => busy(e.currentTarget, async () => {
+    const r = await api('/api/voice/preview', { body: { voice: DRAFT.voice, style: DRAFT.voiceStyle, text: $('#vText').value }, raw: true });
+    const a = new Audio(URL.createObjectURL(await r.blob())); await a.play();
+  });
+  $$('[data-make]').forEach((b) => (b.onclick = () => {
+    const type = b.dataset.make;
+    modal(`<div class="label">${esc(p.name)}</div><h2 class="h2" style="margin:6px 0 16px">Produzir ${type === 'video' ? 'vídeo' : 'carrossel'} agora</h2>
+      <div class="fields"><label class="field"><span>Tema (opcional)</span><input type="text" id="mkTopic" placeholder="Deixe vazio para a Nara escolher pelo engajamento e pelas notícias"></label>
+      <small class="muted">${DRAFT.autoPost ? 'Este perfil está com “Postar sozinha” LIGADO: vai publicar assim que ficar pronto.' : 'Vai ficar no Painel esperando sua aprovação.'}</small>
+      <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Cancelar</button><button class="btn pri" id="mkGo">Produzir</button></div></div>`);
+    $('#mkGo').onclick = (ev) => busy(ev.currentTarget, async () => {
+      if (dirty) await saveProfile();
+      await api('/api/jobs', { body: { profileId: p.id, type, topic: $('#mkTopic').value.trim() } });
+      closeModal(); toast('Produção iniciada! Acompanhe no Painel.'); await refresh();
+    });
+  }));
+  $('#bYt').onclick = (e) => busy(e.currentTarget, async () => {
+    if (dirty) await saveProfile();
+    if (!S.settings.youtubeClientId) throw new Error('Primeiro cole o Client ID e o Client Secret do YouTube em Ajustes.');
+    const r = await api('/api/youtube/auth/' + p.id);
+    window.open(r.url, '_blank');
+    toast('Faça o login na aba que abriu e escolha o canal.');
+  });
+  $('#bIg').onclick = (e) => busy(e.currentTarget, async () => {
+    if (dirty) await saveProfile();
+    const r = await api('/api/instagram/test', { body: { profileId: p.id } });
+    toast(`Instagram ok: @${r.username} · ${nf(r.followers)} seguidores`); await refresh();
+  });
+  $('#bPrevSched').onclick = (e) => busy(e.currentTarget, async () => {
+    if (dirty) await saveProfile();
     const r = await api('/api/schedule/preview?profileId=' + p.id);
-    $('#slotPrev').innerHTML = r.slots.map((s) => `<div class="item s">${s.time} · ${TYPE[s.type]}</div>`).join('') || '<div class="hint">Nenhum post por dia configurado.</div>';
-  } catch (_) {}
+    $('#schedPrev').innerHTML = r.slots.map((s) => `<div class="item"><div class="time">${esc(s.time)}</div><div class="t"><b>${TYPE[s.type]}</b></div></div>`).join('') || '<div class="empty">Nada hoje (confira os dias da semana e as quantidades).</div>';
+  });
+  // imagens
+  $$('.drop').forEach((d) => {
+    const inp = $('input[type=file]', d);
+    d.addEventListener('click', (e) => { if (e.target.closest('[data-rm]')) return; inp.click(); });
+    d.addEventListener('dragover', (e) => { e.preventDefault(); d.classList.add('over'); });
+    d.addEventListener('dragleave', () => d.classList.remove('over'));
+    d.addEventListener('drop', (e) => { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) upload(p, d.dataset.kind, e.dataTransfer.files[0]); });
+    inp.addEventListener('change', () => inp.files[0] && upload(p, d.dataset.kind, inp.files[0]));
+    const rm = $('[data-rm]', d);
+    if (rm) rm.onclick = async (e) => { e.stopPropagation(); if (!confirm('Remover esta imagem?')) return; await api(`/api/profiles/${p.id}/image`, { body: { kind: d.dataset.kind, dataUrl: '' } }); await refresh(); keepDraft(() => viewPerfil(p.id)); };
+  });
 }
-$('#profSel').onchange = (e) => { if (dirty && !confirm('Descartar alterações não salvas?')) { e.target.value = curProfId; return; } dirty = false; curProfId = e.target.value; store.set('nara_prof', curProfId); renderProfiles(); };
-$('#profForm').addEventListener('input', () => (dirty = true));
-$('#btnNewProf').onclick = async () => {
-  const name = prompt('Nome do novo perfil (ex.: @casos.reais)'); if (!name) return;
-  const r = await api('/api/profiles', { method: 'POST', body: { name } });
-  curProfId = r.profile.id; store.set('nara_prof', curProfId); dirty = false; await refresh(); toast('Perfil criado! Agora configure abaixo.');
-};
-async function saveProfile() {
-  const p = curProf(); if (!p) return;
-  const body = { id: p.id, palette: [...(p.palette || [])] };
-  $$('#profForm [data-k]').forEach((el) => setPath(body, el.dataset.k, read(el)));
-  try { await api('/api/profiles', { method: 'POST', body }); dirty = false; toast('✅ Perfil salvo'); await refresh(); } catch (e) { toast('❌ ' + e.message); }
+function keepDraft(fn) { const d = DRAFT, wasDirty = dirty; fn(); }
+async function shrink(file, kind) {
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+  const max = kind === 'logo' ? 800 : 1600;
+  const sc = Math.min(1, max / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return kind === 'logo' ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.9);
 }
-$('#btnSaveProf').onclick = saveProfile;
-$('#btnDelProf').onclick = async () => {
-  const p = curProf(); if (!p || !confirm(`Apagar o perfil "${p.name}"? Isso não apaga nada das redes.`)) return;
-  await api('/api/profiles/' + p.id, { method: 'DELETE' }); curProfId = ''; dirty = false; refresh();
-};
-$('#refFile').onchange = async (e) => {
-  const f = e.target.files[0]; if (!f) return;
-  if (f.size > 8e6) return toast('Imagem muito grande (máx. 8 MB)');
-  const dataUrl = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
-  toast('Enviando e analisando o estilo… (alguns segundos)', 8000);
-  try {
-    const r = await api(`/api/profiles/${curProf().id}/reference`, { method: 'POST', body: { dataUrl } });
-    toast(r.warning || '✅ Referência analisada!'); dirty = false; refresh();
-  } catch (err) { toast('❌ ' + err.message); }
-  e.target.value = '';
-};
-async function removeRef() { await api(`/api/profiles/${curProf().id}/reference`, { method: 'POST', body: {} }); refresh(); }
-$('#btnYt').onclick = async () => {
+async function upload(p, kind, file) {
+  const d = $(`.drop[data-kind="${kind}"]`);
+  d.innerHTML = '<div class="msg"><b>Enviando…</b>' + (kind === 'reference' || kind === 'carousel' ? 'A Claude está analisando o estilo (uns 10 s).' : '') + '</div>';
   try {
     if (dirty) await saveProfile();
-    const r = await api('/api/youtube/auth/' + curProf().id);
-    window.open(r.url, '_blank');
-    $('#ytPaste').classList.remove('hide');
-  } catch (e) { toast('❌ ' + e.message); }
-};
-$('#btnYtCode').onclick = async () => {
-  try { const r = await api('/api/youtube/code', { method: 'POST', body: { profileId: curProf().id, code: $('#ytCode').value } }); toast('✅ Conectado: ' + (r.channel || 'canal')); $('#ytPaste').classList.add('hide'); refresh(); } catch (e) { toast('❌ ' + e.message); }
-};
-$('#btnIgTest').onclick = async () => {
-  try { if (dirty) await saveProfile(); const r = await api('/api/instagram/test', { method: 'POST', body: { profileId: curProf().id } }); $('#igStatus').textContent = `✅ @${r.username} · ${r.followers} seguidores`; } catch (e) { $('#igStatus').textContent = '❌ ' + e.message; }
-};
-
-// ---------- configurações ----------
-function renderSettings() {
-  $$('[data-s]').forEach((el) => fill(el, getPath(S.settings, el.dataset.s)));
-  $('#devTok').value = S.settings.deviceToken || '';
+    const r = await api(`/api/profiles/${p.id}/image`, { body: { kind, dataUrl: await shrink(file, kind) } });
+    if (r.warning) toast(r.warning, true); else toast(kind === 'reference' || kind === 'carousel' ? 'Referência analisada!' : 'Imagem salva!');
+  } catch (e) { toast(e.message, true); }
+  await refresh(); viewPerfil(p.id);
 }
-$$('[data-s]').forEach((el) => el.addEventListener('input', () => (dirty = true)));
-$$('[data-save-settings]').forEach((b) => (b.onclick = async () => {
-  const body = {};
-  $$('[data-s]').forEach((el) => setPath(body, el.dataset.s, el.type === 'number' ? Number(el.value) : read(el)));
-  if ($('#newPwd').value.trim()) body.newAdminToken = $('#newPwd').value.trim();
-  try {
-    await api('/api/settings', { method: 'POST', body });
-    if (body.newAdminToken) { TOKEN = body.newAdminToken; store.set('nara_token', TOKEN); $('#newPwd').value = ''; }
-    dirty = false; toast('✅ Salvo'); refresh();
-  } catch (e) { toast('❌ ' + e.message); }
-}));
-$('#btnVoice').onclick = async () => { try { await api('/api/nara/test-voice', { method: 'POST' }); toast('🔊 Tocando no celular…'); } catch (e) { toast('❌ ' + e.message); } };
-$('#btnTestKeys').onclick = async () => {
-  $('#keysOut').textContent = 'Testando…';
-  try { const r = await api('/api/test/keys', { method: 'POST' }); $('#keysOut').innerHTML = Object.entries(r).map(([k, v]) => `<b>${k}</b>: ${esc(v)}`).join('<br>'); } catch (e) { $('#keysOut').textContent = '❌ ' + e.message; }
-};
-
-function renderSistema() {
-  const s = S.system;
-  $('#sysInfo').innerHTML = [
-    `<div class="item"><div class="t">No próprio celular (modo DeX)</div><div class="s">http://localhost:${s.port}</div></div>`,
-    ...s.addresses.map((a) => `<div class="item"><div class="t">${a.startsWith('100.') ? 'De qualquer lugar (Tailscale)' : 'Na mesma rede Wi-Fi'}</div><div class="s">http://${a}:${s.port}</div></div>`),
-    `<div class="item"><div class="s">Ligada há ${Math.round(s.uptime / 3600)}h · memória livre ${s.freeMem} MB · Node ${s.node}</div></div>`,
-  ].join('');
-  const box = $('#logs'); const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
-  box.textContent = S.logs.join('\n'); if (atBottom) box.scrollTop = box.scrollHeight;
+async function saveProfile() {
+  const body = structuredClone(DRAFT);
+  if (body.instagram && body.instagram.accessToken && body.instagram.accessToken.includes('••')) delete body.instagram.accessToken;
+  if (body.youtube) delete body.youtube.refreshToken;
+  await api('/api/profiles', { body });
+  setDirty(false); await refresh();
+  toast('Perfil salvo!');
+  const { v, id } = current();
+  if (v === 'perfil' && id === body.id) { const t = sessionStorage.getItem('ptab'); viewPerfil(id).then(() => t && showTab(t)); }
 }
 
-// ---------- início ----------
+/* =================== AGENDA =================== */
+function viewAgenda() {
+  const filt = sessionStorage.getItem('jf') || '';
+  const jobs = S.jobs.filter((j) => !filt || j.profileId === filt);
+  $('#view').innerHTML = `
+  <div class="head"><div><div class="label">${new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</div><h1 class="h1">Agenda<span style="color:var(--lime)">.</span></h1></div></div>
+  <div class="split">
+    <div class="card"><div class="cardh"><h2 class="h2">Produções</h2><select id="jf" style="max-width:240px"><option value="">Todos os perfis</option>${S.profiles.map((p) => `<option value="${esc(p.id)}" ${filt === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="list" id="jobs">${jobs.map(jobCard).join('') || '<div class="empty">Nenhuma produção ainda.</div>'}</div></div>
+    <div class="card" style="align-self:start"><div class="cardh"><h2 class="h2">Hoje</h2><span class="label">${(S.today || []).length} itens</span></div><div class="list">${(S.today || []).map(slotRow).join('') || '<div class="empty">Nada agendado hoje.</div>'}</div></div>
+  </div>`;
+  $('#jf').onchange = (e) => { sessionStorage.setItem('jf', e.target.value); viewAgenda(); };
+  bindJobs();
+}
+
+/* =================== NARA =================== */
+async function viewNara() {
+  if (!VOICES) VOICES = await api('/api/voices').catch(() => ({ google: [], nara: [] }));
+  const n = S.settings.nara;
+  SDRAFT = {};
+  const addr = (S.system.addresses || [])[0];
+  $('#view').innerHTML = `
+  <div class="head"><div><div class="label">Assistente</div><h1 class="h1">Nara<span style="color:var(--lime)">.</span></h1><p>Fale com ela por aqui ou pelo Atom S3R. Ela muda qualquer configuração dos perfis só conversando.</p></div>
+  <div class="row"><button class="btn" id="bBrief2">${ICON.mic} Bom dia (briefing)</button></div></div>
+  <div class="split">
+    <div class="card" style="display:flex;flex-direction:column"><div class="chat chatbig" id="chat"></div>${composer()}
+      <div class="suggest">${['Nara, bom dia', 'Qual perfil cresceu mais essa semana?', 'Posta um vídeo extra hoje', 'Muda a voz do perfil para Charon', 'Pausa tudo'].map((t) => `<button class="pill" data-sug="${esc(t)}">${esc(t)}</button>`).join('')}</div></div>
+    <div class="grid" style="align-content:start">
+      <div class="card"><div class="cardh"><h2 class="h2">Voz da Nara</h2><span class="label">grátis</span></div><div class="fields">
+        <div class="voices" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">${(VOICES.nara || []).map((v) => `<div class="voice ${v.name === n.voice ? 'on' : ''}" data-nv="${esc(v.name)}"><span class="g">${esc(v.gender)}</span><b>${esc(v.label)}</b><small>${esc(v.desc)}</small></div>`).join('')}</div>
+        <label class="field"><span>Velocidade da fala</span><select data-s="nara.rate">${['-10%', '+0%', '+10%', '+20%', '+30%'].map((r) => `<option ${(n.rate || '+0%') === r ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+        <label class="switch"><span><b>Falar pelas caixas de som do PC</b></span><input type="checkbox" data-s="nara.speakOnPhone" ${n.speakOnPhone ? 'checked' : ''}></label>
+        <label class="switch"><span><b>Falar pelo Atom S3R</b><small>Precisa da base com alto-falante.</small></span><input type="checkbox" data-s="nara.speakOnDevice" ${n.speakOnDevice ? 'checked' : ''}></label>
+        <label class="field"><span>Briefing automático todo dia às</span><input type="time" data-s="nara.briefingTime" value="${esc(n.briefingTime || '')}"><small>Vazio = só quando você pedir.</small></label>
+        <button class="btn" id="bTestVoice">${ICON.play} Ouvir a voz da Nara</button>
+      </div></div>
+      <div class="card"><div class="cardh"><h2 class="h2">Atom S3R</h2><span class="label">chamar: “${esc(n.wakeWord || 'nara')}”</span></div>
+        <div class="fields">
+          <div class="field"><span>Endereço da Nara</span><code>http://${esc(addr || 'IP-DESTE-PC')}:${S.system.port}</code></div>
+          <div class="field"><span>Token do Atom</span><code>${esc(S.settings.deviceToken)}</code></div>
+          <label class="field"><span>Palavra para chamar</span><input type="text" data-s="nara.wakeWord" value="${esc(n.wakeWord || 'nara')}"></label>
+          <small class="muted">Para ela entender sua voz, coloque a chave <b>Groq</b> (grátis) em Ajustes. ${S.settings.groqKey ? '<span class="up">Groq configurada ✓</span>' : '<span class="down">Groq ainda não configurada</span>'}</small>
+        </div></div>
+    </div>
+  </div>`;
+  bindChat();
+  $$('[data-sug]').forEach((b) => (b.onclick = () => { $('#chatIn').value = b.dataset.sug; $('#chatIn').focus(); }));
+  $('#bBrief2').onclick = (e) => busy(e.currentTarget, async () => { await api('/api/nara/briefing', { body: {} }); await refresh(); renderChat(); });
+  $('#bTestVoice').onclick = (e) => busy(e.currentTarget, async () => { if (dirty) await saveSettings(); await api('/api/nara/test-voice', { body: {} }); toast('Ouviu? Ela falou pelas caixas de som.'); });
+  $$('[data-nv]').forEach((v) => (v.onclick = () => { $$('[data-nv]').forEach((x) => x.classList.remove('on')); v.classList.add('on'); setPath(SDRAFT, 'nara.voice', v.dataset.nv); setDirty(true, saveSettings); }));
+  bindSettingsInputs();
+}
+
+/* =================== AJUSTES =================== */
+function key(label, f, ph, help) {
+  const v = getPath(S.settings, f) || '';
+  return `<label class="field"><span>${label} ${v ? '<span class="st done" style="margin-left:6px">salva</span>' : ''}</span><input type="password" data-s="${f}" placeholder="${esc(v || ph)}" autocomplete="off">${help ? `<small>${help}</small>` : ''}</label>`;
+}
+async function viewAjustes() {
+  SDRAFT = {};
+  const s = S.settings;
+  const gstat = await api('/api/google/status').catch(() => ({ keys: [] }));
+  const gk = s.googleKeys || ['', '', '', '', ''];
+  $('#view').innerHTML = `
+  <div class="head"><div><div class="label">Sistema</div><h1 class="h1">Ajustes<span style="color:var(--lime)">.</span></h1><p>Configure uma vez. A Nara roda sozinha neste PC 24h, mesmo com esta página fechada.</p></div>
+  <button class="btn pri" id="bTest">Testar chaves</button></div>
+  <div id="testOut"></div>
+  <div class="grid g2">
+    <div class="card"><div class="cardh"><h2 class="h2">Inteligência</h2></div><div class="fields">
+      ${key('🧠 DeepSeek — cérebro da Nara', 'deepseekKey', 'sk-…', 'Conversa, briefing e pedidos. platform.deepseek.com → API keys.')}
+      <div class="field"><span>⚙️ Claude — motor</span><div class="item" style="background:rgba(200,255,46,.06);border-color:rgba(200,255,46,.3)"><div class="t"><b>${s.anthropicKey ? 'Usando chave de API' : 'Usando sua assinatura Claude neste PC'}</b><small>Roteiros, temas, carrosséis e referências. Cada vídeo é uma conversa nova e descartável.</small></div></div></div>
+      ${key('Chave de API da Claude (opcional)', 'anthropicKey', 'deixe vazio para usar a assinatura', 'Só se quiser pagar por uso em vez da assinatura.')}
+      <label class="switch"><span><b>Pesquisar atualidades na internet</b><small>Antes de escolher cada tema, a Claude vê o que está em alta.</small></span><input type="checkbox" data-s="webTrends" ${s.webTrends !== false ? 'checked' : ''}></label>
+      <label class="field"><span>Capricho da Claude</span><select data-s="claudeEffort">${[['low', 'Rápido'], ['medium', 'Equilibrado'], ['high', 'Caprichado']].map(([k, t]) => `<option value="${k}" ${s.claudeEffort === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+    </div></div>
+    <div class="card"><div class="cardh"><div><h2 class="h2">Google AI Studio</h2><p class="muted" style="margin:6px 0 0">Narração dos vídeos. Até 5 chaves: quando uma esgota, passa para a próxima.</p></div></div><div class="fields">
+      ${gk.map((v, i) => { const st = (gstat.keys || []).find((k) => k.key === v); return `<div class="keyrow"><span class="n">${i + 1}</span><input type="password" data-gk="${i}" placeholder="${esc(v || 'AIza…')}" autocomplete="off">${v ? `<span class="st ${st && st.exhausted ? 'failed' : 'done'}">${st && st.exhausted ? 'esgotada hoje' : 'ativa'}</span>` : '<span class="st">vazia</span>'}</div>`; }).join('')}
+      ${s.googleKey ? `<small class="muted">Chave antiga também em uso: <code>${esc(s.googleKey)}</code></small>` : ''}
+      <small class="muted">Crie em aistudio.google.com → Get API key. Use contas Google diferentes para ter mais cota grátis.</small>
+    </div></div>
+    <div class="card"><div class="cardh"><h2 class="h2">Extras</h2></div><div class="fields">
+      ${key('👂 Groq — entender sua voz no Atom (grátis)', 'groqKey', 'gsk_…', 'console.groq.com → API Keys.')}
+      ${key('🖼️ Pexels — mais fotos grátis (opcional)', 'pexelsKey', '', 'pexels.com/api')}
+    </div></div>
+    <div class="card"><div class="cardh"><h2 class="h2">App do YouTube</h2><button class="btn sm ghost" id="bHowYt">Como criar</button></div><div class="fields">
+      <label class="field"><span>Client ID ${s.youtubeClientId ? '<span class="st done" style="margin-left:6px">salvo</span>' : ''}</span><input type="text" data-s="youtubeClientId" value="${esc(s.youtubeClientId)}" placeholder="…apps.googleusercontent.com"></label>
+      ${key('Client Secret', 'youtubeClientSecret', 'GOCSPX-…')}
+      <small class="muted">Depois, conecte cada canal na página do perfil → Publicação.</small>
+    </div></div>
+    <div class="card"><div class="cardh"><h2 class="h2">Geral</h2></div><div class="fields f2">
+      <label class="field"><span>Fuso horário</span><input type="text" data-s="timezone" value="${esc(s.timezone)}"></label>
+      <label class="field"><span>Qualidade do vídeo</span><select data-s="render.quality"><option value="1080" ${s.render.quality == '1080' ? 'selected' : ''}>1080p</option><option value="720" ${s.render.quality == '720' ? 'selected' : ''}>720p (mais rápido)</option></select></label>
+      <label class="field"><span>Modelo da Claude</span><input type="text" data-s="claudeModel" value="${esc(s.claudeModel)}"></label>
+      <label class="field"><span>Nova senha da página</span><input type="password" data-s="newAdminToken" placeholder="deixe vazio para manter"></label>
+    </div><button class="btn sm ghost" id="bHowIg" style="margin-top:16px">Como conectar o Instagram</button></div>
+    <div class="card"><div class="cardh"><h2 class="h2">Sistema</h2><span class="label">ligada há ${Math.floor(S.system.uptime / 3600)}h${String(Math.floor((S.system.uptime % 3600) / 60)).padStart(2, '0')}</span></div>
+      <div class="fields"><div class="field"><span>Abrir no celular/tablet (mesmo Wi-Fi)</span>${(S.system.addresses || []).map((a) => `<code>http://${esc(a)}:${S.system.port}</code>`).join(' ')}</div>
+      <div class="field"><span>Registro</span><div class="logs" id="logs">${(S.logs || []).map(esc).join('\n')}</div></div></div></div>
+  </div>`;
+  const lg = $('#logs'); lg.scrollTop = lg.scrollHeight;
+  bindSettingsInputs();
+  $$('[data-gk]').forEach((el) => el.addEventListener('input', () => {
+    const arr = SDRAFT.googleKeys || [...gk];
+    arr[Number(el.dataset.gk)] = el.value.trim() || gk[Number(el.dataset.gk)];
+    SDRAFT.googleKeys = arr; setDirty(true, saveSettings);
+  }));
+  $('#bTest').onclick = (e) => busy(e.currentTarget, async () => {
+    if (dirty) await saveSettings();
+    $('#testOut').innerHTML = '<div class="card" style="margin-bottom:16px"><div class="muted">Testando… (pode levar uns 20 segundos)</div></div>';
+    const r = await api('/api/test/keys', { body: {} });
+    $('#testOut').innerHTML = `<div class="card" style="margin-bottom:16px"><div class="cardh"><h2 class="h2">Resultado</h2></div><div class="list">${Object.entries(r).map(([k, v]) => `<div class="item"><div class="t"><b>${esc(k)}</b></div><span class="st ${/ok/.test(v) ? 'done' : /não configurada/.test(v) ? '' : 'failed'}">${esc(v)}</span></div>`).join('')}</div></div>`;
+  });
+  $('#bHowYt').onclick = () => modal(`<h2 class="h2" style="margin-bottom:14px">Criar o app do YouTube</h2><ol class="steps-list">
+    <li>Abra <b>console.cloud.google.com</b> → crie o projeto <b>Nara</b>.</li>
+    <li><b>APIs e serviços → Biblioteca</b> → <b>YouTube Data API v3</b> → <b>Ativar</b>.</li>
+    <li><b>Tela de consentimento OAuth</b>: Externo, nome “Nara”, seu e-mail → em <b>Público-alvo</b> clique <b>Publicar app</b>.</li>
+    <li><b>Credenciais → Criar credenciais → ID do cliente OAuth</b> → tipo <b>App para computador</b>.</li>
+    <li>Copie o <b>Client ID</b> e o <b>Client Secret</b> e cole aqui → <b>Salvar</b>.</li>
+    <li>No perfil → <b>Publicação</b> → <b>Conectar canal</b>. No aviso “app não verificado”: <b>Avançado → Acessar Nara</b>.</li></ol>
+    <p class="muted" style="font-size:13px">Vídeos de apps novos ficam <b>privados</b> até o Google aprovar a auditoria (formulário grátis: support.google.com/youtube/contact/yt_api_form).</p><div class="row" style="justify-content:flex-end"><button class="btn pri" data-close>Entendi</button></div>`);
+  $('#bHowIg').onclick = () => modal(`<h2 class="h2" style="margin-bottom:14px">Conectar o Instagram</h2><ol class="steps-list">
+    <li>No app do Instagram: <b>Configurações → Tipo de conta → Mudar para conta profissional</b>.</li>
+    <li>Abra <b>developers.facebook.com</b> → <b>Meus apps → Criar app</b> → caso de uso <b>Instagram</b> (gerenciar mensagens e conteúdo).</li>
+    <li>No app: <b>Instagram → Configuração da API com login do Instagram</b>.</li>
+    <li><b>Funções → Testadores do Instagram</b> → adicione o @. No Instagram: <b>Configurações → Apps e sites → Convites de testador → Aceitar</b>.</li>
+    <li>Em <b>Gerar tokens de acesso</b> → <b>Adicionar conta</b> → <b>Gerar token</b> → copie (começa com IGAA).</li>
+    <li>Cole no perfil → <b>Publicação → Token do Instagram</b> → Salvar → <b>Testar conexão</b>.</li></ol>
+    <p class="muted" style="font-size:13px">O token dura 60 dias e a Nara renova sozinha toda semana.</p><div class="row" style="justify-content:flex-end"><button class="btn pri" data-close>Entendi</button></div>`);
+}
+function bindSettingsInputs() {
+  $$('[data-s]').forEach((el) => {
+    const ev = el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(ev, () => {
+      const v = el.type === 'checkbox' ? el.checked : el.value.trim();
+      if (el.type === 'password' && !v) { delete SDRAFT[el.dataset.s]; return; }
+      setPath(SDRAFT, el.dataset.s, v);
+      setDirty(true, saveSettings);
+    });
+  });
+}
+async function saveSettings() {
+  await api('/api/settings', { body: SDRAFT });
+  if (SDRAFT.newAdminToken) { TOKEN = SDRAFT.newAdminToken; store.set('naraToken', TOKEN); }
+  SDRAFT = {}; setDirty(false); await refresh(); toast('Ajustes salvos!'); render();
+}
+
+/* =================== início =================== */
 async function start() {
-  $('#login').classList.add('hide'); $('#app').classList.remove('hide'); $('#hdr').classList.remove('hide');
-  const tab = store.get('nara_tab'); if (tab) { const b = $(`#nav [data-tab="${tab}"]`); b && b.click(); }
-  await refresh();
-  clearInterval(start.i); start.i = setInterval(refresh, 8000);
+  try { await refresh(); } catch (e) { if (!TOKEN) return; $('#loginErr').textContent = e.message; return; }
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  render();
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if (document.hidden) return;
+    const { v } = current();
+    try {
+      await refresh();
+      if ((v === 'painel' || v === 'agenda') && !document.querySelector('.job.open, .job video, #chatIn:focus') && !dirty) render();
+      else if (v === 'nara') renderChat();
+    } catch (_) {}
+  }, 15000);
 }
-(async () => {
-  await detectServer();
-  if (TOKEN) start(); else showLogin();
-})();
-window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+if (TOKEN) start(); else logout();
 </script>
 </body>
 </html>
