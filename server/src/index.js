@@ -17,8 +17,10 @@ const { FONTS_DIR } = require('./media/render');
 const fonts = require('./media/fonts');
 const refs = require('./media/refs');
 const topics = require('./topics');
+const hotspot = require('./hotspot');
 
 const PORT = Number(process.env.PORT) || 8080;
+let lastDevice = null; // última vez que o Atom S3R falou com a Nara
 const MIME = { '.ttf': 'font/ttf', '.otf': 'font/otf', '.woff2': 'font/woff2', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 
 function send(res, code, body, headers = {}) {
@@ -88,7 +90,7 @@ function state() {
     statsHistory: analytics.all(),
     conversation: nara.conversation().slice(-30),
     logs: logger.recent().slice(-120),
-    system: { addresses: lanAddresses(), port: PORT, uptime: Math.round(process.uptime()), node: process.version, freeMem: Math.round(os.freemem() / 1048576) },
+    system: { addresses: lanAddresses(), port: PORT, uptime: Math.round(process.uptime()), node: process.version, freeMem: Math.round(os.freemem() / 1048576), device: lastDevice, hotspot: hotspot.status() },
   };
 }
 
@@ -125,7 +127,11 @@ async function route(req, res) {
 
   // ---------- Atom S3R ----------
   if (p.startsWith('/api/device/')) {
-    if (!authed(req, url, true)) return send(res, 401, { error: 'token inválido' });
+    const ip = String(req.socket.remoteAddress || '').replace('::ffff:', '');
+    const okToken = authed(req, url, true);
+    lastDevice = { at: new Date().toISOString(), ip, path: p, ok: okToken };
+    if (p !== '/api/device/status') logger.info(`Atom S3R (${ip}) chamou ${p}${okToken ? '' : ' — TOKEN ERRADO'}`);
+    if (!okToken) return send(res, 401, { error: 'token inválido' });
     if (m === 'POST' && p === '/api/device/wake') return send(res, 200, { ...(await nara.wake()), audio: !!nara.lastAudio() });
     if (m === 'POST' && p === '/api/device/voice') {
       const wav = await readBody(req, 4 * 1024 * 1024);
@@ -167,7 +173,22 @@ async function route(req, res) {
   if (m === 'GET' && p === '/api/state') return send(res, 200, state());
 
   if (m === 'POST' && p === '/api/settings') {
-    config.updateSettings(await json(req));
+    const body = await json(req);
+    const wasPaused = config.load().settings.paused;
+    config.updateSettings(body);
+    const s = config.load().settings;
+    if (body.paused === true && !wasPaused) {
+      jobs.pauseCurrent(); // a produção em andamento para na próxima etapa e volta para a fila
+      logger.info('Nara PARADA pela página (agenda, produção e tarefas automáticas)');
+    }
+    if (body.paused === false && wasPaused) {
+      logger.info('Nara INICIADA pela página');
+      setImmediate(jobs.work);
+    }
+    if (body.hotspot) {
+      if (s.hotspot.enabled) await hotspot.keep();
+      else await hotspot.stop();
+    }
     return send(res, 200, state());
   }
   if (m === 'POST' && p === '/api/profiles') {
@@ -392,6 +413,7 @@ server.listen(PORT, '0.0.0.0', () => {
   logger.info(` Token do Atom S3R: ${s.deviceToken}`);
   logger.info('==============================================');
   scheduler.start();
+  hotspot.start();
   jobs.work();
   fonts.ensureDefaults();
   setTimeout(() => {

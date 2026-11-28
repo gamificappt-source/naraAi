@@ -22,6 +22,7 @@ const DEFAULT_SETTINGS = {
   youtubeClientId: '',
   youtubeClientSecret: '',
   publicUrl: '', // ex.: http://100.x.x.x:8080 (Tailscale) — só informativo
+  hotspot: { enabled: false, ssid: 'Nara-Atom', pass: '' }, // rede Wi-Fi própria da Nara para o Atom S3R
   webTrends: true, // a Claude pesquisa na internet o que está em alta antes de escolher o tema
   paused: false, // pausa geral
   nara: {

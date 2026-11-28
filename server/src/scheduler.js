@@ -95,6 +95,8 @@ async function tick() {
       }
     }
   }
+  // Nara parada: também não roda estatísticas/briefing/limpeza (voltam quando iniciar)
+  if (c.settings.paused) { saveState(); return; }
   for (const t of dailyTasks) {
     const tm = toMin(typeof t.timeFn === 'function' ? t.timeFn() : t.timeFn);
     if (tm == null) continue;

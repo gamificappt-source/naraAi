@@ -310,7 +310,8 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
       <a href="#/ajustes" data-v="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 1.2 14H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 7 2.6V2.5a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1.5z"/></svg>Ajustes</a>
     </nav>
     <div class="topr">
-      <button class="chip" id="statusChip" title="Pausar ou retomar todas as postagens"><i class="dot"></i><span id="statusTxt">Rodando</span></button>
+      <span class="chip" id="statusChip"><i class="dot"></i><span id="statusTxt">Rodando</span></span>
+      <button class="btn sm" id="runBtn" title="Parar ou iniciar a Nara">■ Parar</button>
     </div>
   </header>
   <main id="view"></main>
@@ -404,14 +405,26 @@ async function refresh() {
   S = await api('/api/state');
   const paused = S.settings.paused;
   $('#statusChip').classList.toggle('off', paused);
-  $('#statusTxt').textContent = paused ? 'Pausada' : S.busy ? 'Produzindo…' : 'Rodando';
+  $('#statusTxt').textContent = paused ? 'Parada' : S.busy ? 'Produzindo…' : 'Rodando';
+  const rb = $('#runBtn');
+  rb.textContent = paused ? '▶ Iniciar' : '■ Parar';
+  rb.classList.toggle('pri', paused);
   return S;
 }
-$('#statusChip').addEventListener('click', async () => {
-  const p = !S.settings.paused;
-  if (!(await ask(p ? 'Pausar TODAS as postagens automáticas?' : 'Voltar a postar normalmente?', p ? 'Pausar' : 'Retomar'))) return;
-  await api('/api/settings', { body: { paused: p } });
-  await refresh(); toast(p ? 'Postagens pausadas' : 'Postagens retomadas'); render();
+$('#runBtn').addEventListener('click', async () => {
+  const stop = !S.settings.paused;
+  const msg = stop
+    ? 'Parar a Nara? Ela para a agenda, a produção e as tarefas automáticas. Se estiver produzindo algo, para na próxima etapa e volta para a fila. A página continua funcionando para você configurar.'
+    : 'Iniciar a Nara? Ela volta a funcionar com tudo que está configurado (o que ficou na fila continua).';
+  if (!(await ask(msg, stop ? 'Parar' : 'Iniciar', 'Cancelar', stop))) return;
+  const rb = $('#runBtn');
+  rb.disabled = true; rb.textContent = 'Aguarde…';
+  try {
+    await api('/api/settings', { body: { paused: stop } });
+    toast(stop ? 'Nara parada' : 'Nara iniciada!');
+  } catch (e) { toast(e.message, true); }
+  rb.disabled = false;
+  await refresh(); render();
 });
 const profById = (id) => S.profiles.find((p) => p.id === id);
 
@@ -496,7 +509,7 @@ function viewPainel() {
   const dt = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   $('#view').innerHTML = `
   <div class="head">
-    <div><div class="label">${esc(dt)}</div><h1 class="h1">${greeting()}.</h1><p>${S.settings.paused ? '<span class="tag" style="background:var(--amber)">Postagens pausadas</span>' : `Hoje: <b>${done}</b> de <b>${today.length}</b> conteúdos publicados.`}</p></div>
+    <div><div class="label">${esc(dt)}</div><h1 class="h1">${greeting()}.</h1><p>${S.settings.paused ? '<span class="tag" style="background:var(--amber)">Nara parada — clique em Iniciar lá em cima</span>' : `Hoje: <b>${done}</b> de <b>${today.length}</b> conteúdos publicados.`}</p></div>
     <div class="row"><button class="btn" id="bBrief">${ICON.mic} Briefing falado</button><a class="btn pri" href="#/perfis">${ICON.plus} Produzir conteúdo</a></div>
   </div>
   <div class="grid g4">
@@ -1116,8 +1129,12 @@ async function viewNara() {
       </div></div>
       <div class="card"><div class="cardh"><h2 class="h2">Atom S3R</h2><span class="label">chamar: “${esc(n.wakeWord || 'nara')}”</span></div>
         <div class="fields">
-          <div class="field"><span>Endereço da Nara</span><code>http://${esc(addr || 'IP-DESTE-PC')}:${S.system.port}</code></div>
+          <label class="switch"><span><b>Rede Wi-Fi própria da Nara</b><small>O PC cria a rede “${esc((S.settings.hotspot || {}).ssid || 'Nara-Atom')}” só para o Atom. Use se o roteador não deixa os aparelhos conversarem.</small></span><input type="checkbox" data-s="hotspot.enabled" ${(S.settings.hotspot || {}).enabled ? 'checked' : ''}></label>
+          ${(S.settings.hotspot || {}).enabled ? `<div class="field"><span>Wi-Fi para o Atom</span><code>${esc(S.settings.hotspot.ssid)}</code><span>Senha</span><code>${esc(S.settings.hotspot.pass)}</code>
+            <small>Situação: ${S.system.hotspot && S.system.hotspot.state === 'On' ? `<span class="up">ligada</span> · ${S.system.hotspot.clients || 0} aparelho(s) conectado(s)` : `<span class="down">${esc((S.system.hotspot && (S.system.hotspot.error || S.system.hotspot.state)) || 'verificando…')}</span>`}</small></div>` : ''}
+          <div class="field"><span>Endereço da Nara (para o Atom)</span><code>http://${(S.settings.hotspot || {}).enabled ? '192.168.137.1' : esc(addr || 'IP-DESTE-PC')}:${S.system.port}</code></div>
           <div class="field"><span>Token do Atom</span><code>${esc(S.settings.deviceToken)}</code></div>
+          <div class="field"><span>Último contato do Atom</span>${S.system.device ? `<span class="st ${S.system.device.ok ? 'done' : 'failed'}">${new Date(S.system.device.at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })} · ${esc(S.system.device.ip)}${S.system.device.ok ? '' : ' · token errado'}</span>` : '<span class="st failed">Ainda não falou com a Nara</span>'}</div>
           <label class="field"><span>Palavra para chamar</span><input type="text" data-s="nara.wakeWord" value="${esc(n.wakeWord || 'nara')}"></label>
           <small class="muted">Para ela entender sua voz, coloque a chave <b>Groq</b> (grátis) em Ajustes. ${S.settings.groqKey ? '<span class="up">Groq configurada ✓</span>' : '<span class="down">Groq ainda não configurada</span>'}</small>
         </div></div>

@@ -46,11 +46,19 @@ function enqueue({ profileId, type = 'video', topic = '', reason = 'agenda', slo
   return job;
 }
 
+// Nara parada pela página: a produção em andamento para na próxima etapa
+const PAUSED = 'NARA_PAUSADA';
+let pauseRequested = false;
+function pauseCurrent() {
+  pauseRequested = busy;
+}
+
 function step(job, msg) {
   job.steps.push(`${new Date().toLocaleTimeString('pt-BR')} ${msg}`);
   job.updatedAt = new Date().toISOString();
   persist();
   logger.info(`[${job.profileName}] ${msg}`);
+  if (pauseRequested && job.status === 'producing') throw new Error(PAUSED);
 }
 
 async function ensureStyle(p) {
@@ -238,21 +246,29 @@ async function work() {
   busy = true;
   try {
     for (;;) {
+      if (config.load().settings.paused) break; // Nara parada: nada novo começa
       const job = jobs.find((j) => j.status === 'queued' || j.status === 'ready');
       if (!job) break;
       try {
         if (job.status === 'ready') await publishJob(job);
         else await runJob(job);
       } catch (e) {
-        job.status = 'failed';
-        job.error = e.message;
-        step(job, 'Erro: ' + e.message);
-        logger.error(e);
+        if (e.message === PAUSED) {
+          job.status = 'queued';
+          job.steps.push(`${new Date().toLocaleTimeString('pt-BR')} Nara parada — continua quando você clicar em Iniciar.`);
+          logger.info(`[${job.profileName}] produção pausada; volta para a fila`);
+        } else {
+          job.status = 'failed';
+          job.error = e.message;
+          job.steps.push(`${new Date().toLocaleTimeString('pt-BR')} Erro: ${e.message}`);
+          logger.error(e);
+        }
       }
       persist();
     }
   } finally {
     busy = false;
+    pauseRequested = false;
   }
 }
 
@@ -292,4 +308,4 @@ function cleanup() {
   persist();
 }
 
-module.exports = { performance, enqueue, list, get, approve, retry, remove, work, cleanup, persist, REFS_DIR, isBusy: () => busy };
+module.exports = { pauseCurrent, performance, enqueue, list, get, approve, retry, remove, work, cleanup, persist, REFS_DIR, isBusy: () => busy };

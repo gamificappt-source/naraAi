@@ -122,8 +122,12 @@ async function execute(a) {
       if (a.profile) {
         const p = profileOf(a.profile);
         p.enabled = a.type === 'resume';
-      } else c.settings.paused = a.type === 'pause';
+      } else {
+        c.settings.paused = a.type === 'pause';
+        if (a.type === 'pause') jobs.pauseCurrent();
+      }
       config.save();
+      if (a.type === 'resume') setImmediate(jobs.work);
       return a.type;
     }
     case 'add_topic': {
