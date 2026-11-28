@@ -99,14 +99,39 @@ async function toPcm(file) {
   return fs.readFileSync(out);
 }
 
+/** Aumenta o volume de um WAV 16-bit (o microfone do Atom capta baixo) — melhora o reconhecimento */
+function normalizeWav(wav) {
+  try {
+    const idx = wav.indexOf(Buffer.from('data'));
+    if (idx < 0 || wav.length < idx + 10) return wav;
+    const start = idx + 8;
+    const n = Math.floor((wav.length - start) / 2);
+    let peak = 1;
+    for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(wav.readInt16LE(start + i * 2)));
+    const gain = Math.min(40, 24000 / peak);
+    if (gain < 1.3) return wav;
+    const out = Buffer.from(wav);
+    for (let i = 0; i < n; i++) {
+      const v = Math.max(-32768, Math.min(32767, Math.round(wav.readInt16LE(start + i * 2) * gain)));
+      out.writeInt16LE(v, start + i * 2);
+    }
+    return out;
+  } catch (_) {
+    return wav;
+  }
+}
+
 /** Áudio WAV do Atom → texto (Groq Whisper grátis). Sem chave Groq, devolve null. */
 async function transcribe(wav) {
+  wav = normalizeWav(wav);
   const key = config.load().settings.groqKey;
   if (!key) return null;
   const fd = new FormData();
   fd.append('file', new Blob([wav], { type: 'audio/wav' }), 'fala.wav');
   fd.append('model', 'whisper-large-v3-turbo');
   fd.append('language', 'pt');
+  // dica de vocabulário: a Groq passa a reconhecer o nome da assistente
+  fd.append('prompt', 'Conversa com a assistente Nara. Nara, bom dia. Nara, posta um vídeo extra hoje. Nara, pausa tudo.');
   fd.append('response_format', 'json');
   const res = await fetchRetry('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: fd,

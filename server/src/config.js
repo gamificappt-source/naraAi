@@ -164,7 +164,13 @@ function updateSettings(patch) {
   const c = load();
   for (const f of [...SECRET_FIELDS]) {
     if (typeof patch[f] === 'string' && patch[f].includes('••')) delete patch[f];
+    // proteção: o navegador às vezes preenche sozinho a senha da página no campo de chave
+    if (typeof patch[f] === 'string' && patch[f].trim() && patch[f].trim() === c.settings.adminToken) {
+      delete patch[f];
+      require('./util').logger.warn(`Ignorado: o campo ${f} veio com a senha da página (preenchimento automático do navegador)`);
+    }
   }
+  if (Array.isArray(patch.googleKeys)) patch.googleKeys = patch.googleKeys.map((k) => (String(k || '').trim() === c.settings.adminToken ? '' : k));
   delete patch.adminToken;
   if (Array.isArray(patch.googleKeys)) {
     const old = c.settings.googleKeys || [];

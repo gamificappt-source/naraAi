@@ -1232,6 +1232,11 @@ function bindSettingsInputs() {
     el.addEventListener(ev, () => {
       const v = el.type === 'checkbox' ? el.checked : el.value.trim();
       if (el.classList.contains('secret') && !v) { delete SDRAFT[el.dataset.s]; if (!Object.keys(SDRAFT).length) setDirty(false); return; }
+      if (el.classList.contains('secret') && v === TOKEN && el.dataset.s !== 'newAdminToken') {
+        el.value = ''; delete SDRAFT[el.dataset.s];
+        toast('O navegador colou a senha da página neste campo. Cole a chave certa.', true);
+        return;
+      }
       setPath(SDRAFT, el.dataset.s, v);
       setDirty(true, saveSettings);
     });

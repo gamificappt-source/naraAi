@@ -221,6 +221,19 @@ async function command(text) {
   return { reply: await speak(reply), actions: plan.actions || [], results };
 }
 
+/**
+ * Ouviu o nome dela? Aceita o nome em qualquer lugar da frase e, no COMEÇO da frase,
+ * também as trocas mais comuns do reconhecimento de voz (Narra, Nala, Lara, Nana…).
+ */
+function hasWakeWord(text) {
+  const wake = (config.load().settings.nara.wakeWord || 'nara').toLowerCase();
+  const norm = String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (new RegExp(`\\b${wake}\\b`).test(norm)) return true;
+  const first = norm.split(' ').filter((w) => !['e', 'ei', 'oi', 'ola', 'a', 'o', 'hey'].includes(w)).slice(0, 2);
+  const similar = wake === 'nara' ? ['narra', 'nara', 'naara', 'nala', 'lara', 'nana', 'narah', 'naira', 'nera', 'mara'] : [wake];
+  return first.some((w) => similar.includes(w));
+}
+
 /** Áudio do Atom S3R → texto → comando (na escuta contínua só reage se ouvir "Nara") */
 async function voice(wav, { requireWake = true } = {}) {
   let text;
@@ -237,9 +250,7 @@ async function voice(wav, { requireWake = true } = {}) {
   }
   logger.info('Ouvi:', text);
   if (!text || /^\W*$/.test(text)) return { heard: '', reply: '' };
-  const wake = (config.load().settings.nara.wakeWord || 'nara').toLowerCase();
-  const norm = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (requireWake && !norm.includes(wake)) return { heard: text, reply: '' };
+  if (requireWake && !hasWakeWord(text)) return { heard: text, reply: '' };
   const r = await command(text);
   return { heard: text, ...r };
 }

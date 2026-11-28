@@ -31,7 +31,7 @@
 #define ALWAYS_LISTEN false
 #endif
 #ifndef VOICE_THRESHOLD
-#define VOICE_THRESHOLD 1800
+#define VOICE_THRESHOLD 120  // mínimo; a sensibilidade real é automática (2x o barulho de fundo)
 #endif
 
 // Configuração salva no Atom (preenchida pela rede "Nara-Setup")
@@ -54,6 +54,18 @@ void loadCfg() {
   while (cfg.server.endsWith("/")) cfg.server.remove(cfg.server.length() - 1);
   if (cfg.server.length() && !cfg.server.startsWith("http")) cfg.server = "http://" + cfg.server;
 }
+
+static const uint32_t MIC_RATE = 16000;
+static const size_t CHUNK = 1600;            // 100 ms
+static const size_t MAX_SECONDS = 6;
+static int16_t *recBuf = nullptr;            // PSRAM
+static size_t recLen = 0;
+static bool micOk = false;
+static bool hasDisplay = false;
+static float noiseFloor = 80;                // barulho de fundo medido sem parar (sensibilidade automática)
+static const int PRE = 5;                    // pedaços guardados antes do disparo (~0,5 s)
+static int preIdx = 0;
+int level(const int16_t *s, size_t n);
 
 // ---------- configuração e diagnóstico pelo cabo USB ----------
 //  SHOW                       → mostra a configuração e a conexão
@@ -90,6 +102,18 @@ void handleSerial() {
   if (line.equalsIgnoreCase("SHOW")) { printCfg(); return; }
   if (line.equalsIgnoreCase("RESTART")) { Serial.println("OK reiniciando"); delay(300); ESP.restart(); }
   if (line.equalsIgnoreCase("TEST")) { Serial.printf("TEST Nara respondeu: %d\n", pingNara()); return; }
+  if (line.equalsIgnoreCase("MIC")) {  // medidor: 8 s de níveis do microfone (para ajustar a sensibilidade)
+    if (!micOk) { Serial.println("MIC microfone desligado"); return; }
+    for (int i = 0; i < 80; i++) {
+      M5.Mic.record(recBuf, CHUNK, MIC_RATE);
+      while (M5.Mic.isRecording()) delay(1);
+      int pk = 0;
+      for (size_t j = 0; j < CHUNK; j++) pk = max(pk, abs((int)recBuf[j]));
+      Serial.printf("MIC nivel=%d pico=%d\n", level(recBuf, CHUNK), pk);
+    }
+    Serial.println("MIC fim");
+    return;
+  }
   if (line.startsWith("SET ") || line.startsWith("set ")) {
     String kv = line.substring(4);
     int eq = kv.indexOf('=');
@@ -103,7 +127,7 @@ void handleSerial() {
     else if (k == "token") prefs.putString("token", v);
     else if (k == "voice") prefs.putBool("voice", v.toInt() != 0);
     else if (k == "listen") prefs.putBool("listen", v.toInt() != 0);
-    else if (k == "thr") prefs.putInt("thr", v.toInt() > 0 ? v.toInt() : 1800);
+    else if (k == "thr") prefs.putInt("thr", v.toInt() > 0 ? v.toInt() : 120);
     else { prefs.end(); Serial.println("ERRO chave desconhecida"); return; }
     prefs.end();
     loadCfg();
@@ -113,13 +137,6 @@ void handleSerial() {
   Serial.println("ERRO comando desconhecido (SHOW, SET chave=valor, TEST, RESTART)");
 }
 
-static const uint32_t MIC_RATE = 16000;
-static const size_t CHUNK = 1600;            // 100 ms
-static const size_t MAX_SECONDS = 6;
-static int16_t *recBuf = nullptr;            // PSRAM
-static size_t recLen = 0;
-static bool micOk = false;
-static bool hasDisplay = false;
 
 // ---------- feedback visual ----------
 void showStatus(const char *txt, uint16_t color) {
@@ -175,7 +192,8 @@ void recordUtterance(size_t startOffset, float seconds) {
     while (M5.Mic.isRecording()) delay(1);
     int lv = level(recBuf + recLen, CHUNK);
     recLen += CHUNK;
-    quiet = lv < cfg.threshold / 3 ? quiet + 1 : 0;
+    // silêncio = perto do barulho de fundo do ambiente
+    quiet = lv < max((int)(noiseFloor * 1.6f), 40) ? quiet + 1 : 0;
     if (quiet > 12 && recLen > MIC_RATE * 1.5) break;
   }
 }
@@ -297,7 +315,7 @@ void runSetupPortal() {
     prefs.putString("token", web.arg("token"));
     prefs.putBool("voice", web.hasArg("voice"));
     prefs.putBool("listen", web.hasArg("listen"));
-    prefs.putInt("thr", web.arg("thr").toInt() > 0 ? web.arg("thr").toInt() : 1800);
+    prefs.putInt("thr", web.arg("thr").toInt() > 0 ? web.arg("thr").toInt() : 120);
     prefs.end();
     web.send(200, "text/html", "<meta charset=utf-8><body style='font-family:sans-serif;background:#0d1117;color:#e6edf3;padding:20px'><h2>Salvo! ✅</h2><p>A Nara vai reiniciar e entrar no seu Wi-Fi.</p>");
     delay(1500);
@@ -362,12 +380,27 @@ void loop() {
   }
 
   if (cfg.listen && micOk) {
-    M5.Mic.record(recBuf, CHUNK, MIC_RATE);
+    // grava em "anel": guarda sempre os últimos PRE pedaços (~0,5 s) para não cortar o começo ("Na-ra")
+    int16_t *slot = recBuf + (preIdx % PRE) * CHUNK;
+    M5.Mic.record(slot, CHUNK, MIC_RATE);
     while (M5.Mic.isRecording()) delay(1);
-    if (level(recBuf, CHUNK) > cfg.threshold) {
+    int lv = level(slot, CHUNK);
+    preIdx++;
+    // dispara quando a voz fica bem acima do barulho de fundo (e acima do mínimo "thr")
+    int trigger = max(cfg.threshold, (int)(noiseFloor * 2.0f));
+    if (lv > trigger) {
+      Serial.printf("ouvindo (nivel %d, fundo %d)\n", lv, (int)noiseFloor);
       showStatus("ouvindo", TFT_RED);
-      recordUtterance(CHUNK, 5);
+      // coloca o áudio guardado em ordem (do mais antigo ao atual) no começo da gravação
+      int n = min(preIdx, PRE);
+      static int16_t tmp[PRE * CHUNK];
+      for (int i = 0; i < n; i++) memcpy(tmp + i * CHUNK, recBuf + ((preIdx - n + i) % PRE) * CHUNK, CHUNK * 2);
+      memcpy(recBuf, tmp, n * CHUNK * 2);
+      preIdx = 0;
+      recordUtterance(n * CHUNK, 5.5);
       sendVoice(true);  // só reage se ouvir a palavra "Nara"
+    } else {
+      noiseFloor = noiseFloor * 0.97f + lv * 0.03f;  // aprende o barulho do ambiente
     }
   }
   delay(5);
