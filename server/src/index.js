@@ -26,7 +26,8 @@ const MIME = { '.ttf': 'font/ttf', '.otf': 'font/otf', '.woff2': 'font/woff2', '
 function send(res, code, body, headers = {}) {
   const isBuf = Buffer.isBuffer(body);
   const data = isBuf || typeof body === 'string' ? body : JSON.stringify(body);
-  res.writeHead(code, { 'Content-Type': isBuf ? 'application/octet-stream' : typeof body === 'string' ? 'text/html; charset=utf-8' : 'application/json', ...headers });
+  // informa o tamanho (o Atom S3R precisa dele para tocar o áudio da resposta)
+  res.writeHead(code, { 'Content-Type': isBuf ? 'application/octet-stream' : typeof body === 'string' ? 'text/html; charset=utf-8' : 'application/json', 'Content-Length': Buffer.byteLength(data), ...headers });
   res.end(data);
 }
 

@@ -18,20 +18,32 @@ function remember(role, text) {
 }
 
 let speaking = Promise.resolve();
-/** Fala com a voz da Nara (grátis): nas caixas de som do PC e/ou no Atom S3R */
+// de onde veio o pedido atual: 'device' (Atom S3R) ou 'page' (página / agenda)
+let origin = 'page';
+// até quando a Nara está falando (o que o Atom captar nesse tempo é a própria voz dela → ignorado)
+let speakUntil = 0;
+
+/** Fala com a voz da Nara (grátis): no Atom S3R (pedido pelo Atom) ou nas caixas de som do PC */
 async function speak(text) {
   lastReply = text;
   remember('nara', text);
   lastAudio = null;
   const s = config.load().settings.nara;
+  const toDevice = s.speakOnDevice && origin === 'device';
+  // pedido feito pelo Atom → responde SÓ no Atom (evita o Atom ouvir as caixas do PC e entrar em loop)
+  const toPc = s.speakOnPhone && !toDevice;
   let file = null;
-  if (s.speakOnPhone || s.speakOnDevice) {
+  if (toPc || toDevice) {
     try { file = await voiceIO.synth(text); } catch (e) { logger.warn('Voz:', e.message); }
   }
-  if (s.speakOnDevice && file) lastAudio = await voiceIO.toPcm(file).catch(() => null);
-  if (s.speakOnPhone) speaking = speaking.then(() => voiceIO.playOnPhone(file, text)).catch((e) => logger.warn('Alto-falante:', e.message));
+  const secs = file ? await voiceIO.audioSeconds(file) : 0;
+  speakUntil = Date.now() + (secs + 3) * 1000;
+  if (toDevice && file) lastAudio = await voiceIO.toPcm(file).catch(() => null);
+  if (toPc) speaking = speaking.then(() => voiceIO.playOnPhone(file, text)).catch((e) => logger.warn('Alto-falante:', e.message));
   return text;
 }
+/** Respostas faladas pelo Atom: curtas (mais rápidas de gerar e de ouvir) */
+const shortVoice = () => (origin === 'device' ? ' A resposta será falada por um alto-falante pequeno: no máximo 2 frases curtas, sem listas.' : '');
 
 function scheduleText() {
   return scheduler.today().map((s) => `${s.time} ${s.profile} ${s.type} (${s.status})`).join('\n') || 'nada agendado';
@@ -46,7 +58,7 @@ async function briefing() {
   try {
     text = await llm.brain(
       'Você é a Nara, assistente pessoal de redes sociais. Fala em português do Brasil, simpática, objetiva, frases curtas, sem emojis e sem markdown, pois o texto será falado em voz alta.',
-      `Agora são ${now.time} de ${now.date}. Faça o briefing falado (máx. 130 palavras): cumprimente, diga como foi ontem (posts e desempenho), ` +
+      `Agora são ${now.time} de ${now.date}. Faça o briefing falado (máx. ${origin === 'device' ? 60 : 130} palavras): cumprimente, diga como foi ontem (posts e desempenho), ` +
         `quais perfis ganharam ou perderam seguidores, problemas que precisam de atenção, e a agenda de hoje.\n\n` +
         `DADOS:\n${JSON.stringify(data)}\n\nAGENDA DE HOJE:\n${scheduleText()}\n\nFILA AGORA:\n${queue.join('\n') || 'vazia'}\n` +
         (c.settings.paused ? '\nATENÇÃO: as postagens estão PAUSADAS.' : ''),
@@ -201,7 +213,7 @@ async function command(text) {
         'Para mudar o prompt, mande o texto completo novo.\n' +
         '- {"type":"refresh_stats"}\n' +
         '- {"type":"briefing"}\n' +
-        'Se for só uma pergunta, responda sem ações. JSON: {"actions":[...], "reply":"o que você vai falar para o dono"}',
+        'Se for só uma pergunta, responda sem ações.' + shortVoice() + ' JSON: {"actions":[...], "reply":"o que você vai falar para o dono"}',
       { json: true, maxTokens: 900 }
     ));
   } catch (e) {
@@ -236,6 +248,8 @@ function hasWakeWord(text) {
 
 /** Áudio do Atom S3R → texto → comando (na escuta contínua só reage se ouvir "Nara") */
 async function voice(wav, { requireWake = true } = {}) {
+  // a Nara ainda está falando: o que o Atom ouviu é a própria voz dela (evita loop)
+  if (requireWake && Date.now() < speakUntil) return { heard: '', reply: '' };
   let text;
   try {
     text = await voiceIO.transcribe(wav);
@@ -251,12 +265,23 @@ async function voice(wav, { requireWake = true } = {}) {
   logger.info('Ouvi:', text);
   if (!text || /^\W*$/.test(text)) return { heard: '', reply: '' };
   if (requireWake && !hasWakeWord(text)) return { heard: text, reply: '' };
-  const r = await command(text);
-  return { heard: text, ...r };
+  origin = 'device';
+  try {
+    const r = await command(text);
+    return { heard: text, ...r };
+  } finally {
+    origin = 'page';
+  }
 }
 
+/** Botão do Atom (segurar 1 s) → briefing falado no Atom */
 async function wake() {
-  return { reply: await briefing() };
+  origin = 'device';
+  try {
+    return { reply: await briefing() };
+  } finally {
+    origin = 'page';
+  }
 }
 
 module.exports = {

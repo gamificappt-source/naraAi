@@ -66,6 +66,8 @@ static float noiseFloor = 80;                // barulho de fundo medido sem para
 static const int PRE = 5;                    // pedaços guardados antes do disparo (~0,5 s)
 static int preIdx = 0;
 int level(const int16_t *s, size_t n);
+void playReplyAudio();
+void micOn();
 
 // ---------- configuração e diagnóstico pelo cabo USB ----------
 //  SHOW                       → mostra a configuração e a conexão
@@ -102,6 +104,13 @@ void handleSerial() {
   if (line.equalsIgnoreCase("SHOW")) { printCfg(); return; }
   if (line.equalsIgnoreCase("RESTART")) { Serial.println("OK reiniciando"); delay(300); ESP.restart(); }
   if (line.equalsIgnoreCase("TEST")) { Serial.printf("TEST Nara respondeu: %d\n", pingNara()); return; }
+  if (line.equalsIgnoreCase("PLAY")) { playReplyAudio(); Serial.println("PLAY fim"); return; }  // toca a última resposta da Nara
+  if (line.equalsIgnoreCase("BEEP")) {  // testa o alto-falante com um bipe
+    M5.Mic.end(); M5.Speaker.begin(); M5.Speaker.setVolume(220);
+    M5.Speaker.tone(880, 400); delay(500); micOn();
+    Serial.printf("BEEP fim (alto-falante %s)\n", M5.Speaker.isEnabled() ? "ligado" : "DESLIGADO");
+    return;
+  }
   if (line.equalsIgnoreCase("MIC")) {  // medidor: 8 s de níveis do microfone (para ajustar a sensibilidade)
     if (!micOk) { Serial.println("MIC microfone desligado"); return; }
     for (int i = 0; i < 80; i++) {
@@ -206,26 +215,36 @@ void playReplyAudio() {
   http.setTimeout(30000);
   int code = http.GET();
   if (code == 200) {
-    int size = http.getSize();
-    if (size > 0 && size < 4 * 1024 * 1024) {
-      uint8_t *buf = (uint8_t *)ps_malloc(size);
-      if (buf) {
-        WiFiClient *st = http.getStreamPtr();
-        int got = 0;
-        uint32_t t0 = millis();
-        while (got < size && millis() - t0 < 30000) {
-          int n = st->readBytes(buf + got, size - got);
-          if (n <= 0) delay(5); else got += n;
+    int size = http.getSize();  // -1 = tamanho desconhecido: lê até o fim
+    const int MAXB = 4 * 1024 * 1024;
+    int cap = size > 0 && size < MAXB ? size : MAXB;
+    uint8_t *buf = (uint8_t *)ps_malloc(cap);
+    if (buf) {
+      WiFiClient *st = http.getStreamPtr();
+      int got = 0;
+      uint32_t t0 = millis(), lastData = millis();
+      while (got < cap && millis() - t0 < 60000) {
+        int av = st->available();
+        if (av > 0) {
+          int n = st->readBytes(buf + got, min(av, cap - got));
+          if (n > 0) { got += n; lastData = millis(); }
+        } else {
+          if (size > 0 && got >= size) break;
+          if (!http.connected() || millis() - lastData > 3000) break;  // acabou
+          delay(5);
         }
+      }
+      Serial.printf("Audio: %d bytes (%.1f s)\n", got, got / 48000.0f);
+      if (got > 0) {
         M5.Mic.end();
         M5.Speaker.begin();
-        M5.Speaker.setVolume(200);
+        M5.Speaker.setVolume(220);
         M5.Speaker.playRaw((const int16_t *)buf, got / 2, 24000, false, 1, 0);
         while (M5.Speaker.isPlaying()) { delay(20); M5.update(); }
-        free(buf);
       }
-    }
-  }
+      free(buf);
+    } else Serial.println("Audio: sem memoria");
+  } else Serial.printf("Audio: HTTP %d\n", code);
   http.end();
   micOn();
 }
