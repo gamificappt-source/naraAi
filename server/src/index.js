@@ -284,7 +284,13 @@ async function route(req, res) {
   if (m === 'POST' && p === '/api/instagram/test') {
     const b = await json(req);
     const prof = config.getProfile(b.profileId);
-    return send(res, 200, await instagram.accountStats(prof));
+    const r = await instagram.accountStats(prof);
+    analytics.refreshProfile(prof.id).catch(() => {}); // já guarda os números para o painel
+    return send(res, 200, r);
+  }
+  // números de um perfil na hora (seguidores, posts, média de views)
+  if ((mm = p.match(/^\/api\/profiles\/([\w-]+)\/stats$/)) && m === 'POST') {
+    return send(res, 200, { stats: await analytics.refreshProfile(mm[1]) });
   }
   if (m === 'POST' && p === '/api/nara/command') {
     const b = await json(req);

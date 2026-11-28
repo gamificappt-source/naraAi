@@ -848,28 +848,55 @@ async function viewPerfil(id) {
   bindFonts((field, name) => { setPath(DRAFT, field, name); setDirty(true, saveProfile); });
   showTab(tab);
   renderProfileDash(p);
+  // ao abrir o perfil, busca os números se estiverem velhos (mais de 30 min)
+  const L = latestStats(p.id);
+  if ((p.instagram.accessToken || p.youtube.refreshToken) && (!L.at || Date.now() - new Date(L.at).getTime() > 30 * 60000)) refreshProfileStats(p);
 }
 function showTab(t) {
   sessionStorage.setItem('ptab', t);
   $$('#ptabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   $$('#panes .pane').forEach((s) => s.classList.toggle('on', s.dataset.p === t));
 }
+/** Último registro de números de um perfil */
+function latestStats(pid) {
+  const h = S.statsHistory || {};
+  for (const d of Object.keys(h).sort().reverse()) if (h[d][pid]) return h[d][pid];
+  return {};
+}
+/** Busca os números do perfil na hora e redesenha o mini painel */
+async function refreshProfileStats(p, quiet = true) {
+  try {
+    await api(`/api/profiles/${p.id}/stats`, { body: {} });
+    await refresh();
+    const { v, id } = current();
+    if (v === 'perfil' && id === p.id && $('#pdash')) renderProfileDash(profById(p.id) || p);
+    if (!quiet) toast('Números atualizados');
+  } catch (e) { if (!quiet) toast(e.message, true); }
+}
 function renderProfileDash(p) {
   const f = followers(p.id);
   const g7 = growth(p.id, 'youtube', 7), g30 = growth(p.id, 'youtube', 30), i7 = growth(p.id, 'instagram', 7), i30 = growth(p.id, 'instagram', 30);
   const posts = S.jobs.filter((j) => j.profileId === p.id && j.status === 'done');
   const views = posts.map((j) => ((j.metrics && j.metrics.youtube && j.metrics.youtube.views) || 0) + ((j.metrics && j.metrics.instagram && j.metrics.instagram.views) || 0));
-  const avg = views.length ? views.reduce((a, b) => a + b, 0) / views.length : null;
+  // números mais recentes da conta (seguidores, posts, médias dos últimos posts)
+  const L = latestStats(p.id);
+  const ig = L.instagram || {}, yt = L.youtube || {};
+  const avg = ig.avgViews != null ? ig.avgViews : views.length ? views.reduce((a, b) => a + b, 0) / views.length : null;
+  const nPosts = (ig.posts || 0) + (yt.posts || 0);
+  const hasYt = !!p.youtube.refreshToken;
   const ser = series(p.id, 'instagram').length >= 2 ? series(p.id, 'instagram') : series(p.id, 'youtube');
   const top = posts.map((j, i) => ({ j, v: views[i] })).sort((a, b) => b.v - a.v).slice(0, 4);
   const mx = Math.max(1, ...top.map((x) => x.v));
+  const err = L.instagramError ? `<div class="err" style="margin-top:8px">Instagram: ${esc(L.instagramError.slice(0, 160))}</div>` : '';
   $('#pdash').innerHTML = `<div class="grid g4">
-    <div class="card kpi"><div class="label">Inscritos YouTube</div><div class="num">${nf(f.yt)}</div><div class="var ${g7 == null ? 'muted' : g7 >= 0 ? 'up' : 'down'}">${pct(g7)} em 7 dias · ${pct(g30)} em 30</div></div>
-    <div class="card kpi"><div class="label">Seguidores Instagram</div><div class="num">${nf(f.ig)}</div><div class="var ${i7 == null ? 'muted' : i7 >= 0 ? 'up' : 'down'}">${pct(i7)} em 7 dias · ${pct(i30)} em 30</div></div>
-    <div class="card kpi lime"><div class="label">Média de views por post</div><div class="num">${avg == null ? '—' : nf(Math.round(avg))}</div><div class="var">${posts.length} posts recentes</div></div>
-    <div class="card kpi"><div class="label">Crescimento</div>${spark(ser.map((x) => x.v), 300, 60)}</div>
-  </div>
+    <div class="card kpi"><div class="label">Seguidores Instagram</div><div class="num">${nf(ig.followers ?? f.ig)}</div><div class="var ${i7 == null ? 'muted' : i7 >= 0 ? 'up' : 'down'}">${pct(i7)} em 7 dias · ${pct(i30)} em 30</div></div>
+    <div class="card kpi"><div class="label">${hasYt ? 'Inscritos YouTube' : 'Posts na conta'}</div><div class="num">${hasYt ? nf(yt.followers ?? f.yt) : nf(nPosts || null)}</div><div class="var ${hasYt ? (g7 == null ? 'muted' : g7 >= 0 ? 'up' : 'down') : 'muted'}">${hasYt ? `${pct(g7)} em 7 dias · ${nf(yt.posts)} vídeos` : 'Instagram'}</div></div>
+    <div class="card kpi lime"><div class="label">Média de views por post</div><div class="num">${avg == null ? '—' : nf(Math.round(avg))}</div><div class="var">${ig.avgLikes != null ? `${nf(ig.avgLikes)} curtidas · ${nf(ig.avgComments)} coment. (últimos ${ig.sample})` : `${posts.length} posts da Nara`}</div></div>
+    <div class="card kpi"><div class="label">Crescimento ${hasYt ? '' : `· ${nf(nPosts)} posts`}</div>${spark(ser.map((x) => x.v), 300, 60)}<div class="var muted" style="margin-top:4px">${L.at ? 'atualizado ' + new Date(L.at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''} <a href="#" id="bRefStats" style="margin-left:6px">atualizar</a></div></div>
+  </div>${err}
   ${top.length ? `<div class="card" style="margin-top:12px"><div class="cardh"><h3 class="h3">Melhores assuntos (a Nara segue estes)</h3><span class="label">views</span></div><div class="list">${top.map((x) => `<div class="item"><div class="t"><b>${esc(x.j.title)}</b><div style="height:6px;border-radius:6px;background:var(--panel3);margin-top:8px"><div style="height:6px;border-radius:6px;background:var(--lime);width:${Math.max(3, (x.v / mx) * 100)}%"></div></div></div><b>${nf(x.v)}</b></div>`).join('')}</div></div>` : ''}`;
+  const rb = $('#bRefStats');
+  if (rb) rb.onclick = (e) => { e.preventDefault(); rb.textContent = 'atualizando…'; refreshProfileStats(p, false); };
 }
 function bindProfile(p) {
   const root = $('#pwrap');

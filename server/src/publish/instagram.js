@@ -161,6 +161,29 @@ async function mediaStats(p, id) {
   return { likes: d.like_count || 0, comments: d.comments_count || 0, views };
 }
 
+/** Média dos últimos posts da conta (inclusive os que não foram feitos pela Nara) */
+async function recentAverages(p, n = 12) {
+  await check(p);
+  const d = await api(p, 'GET', `/${p.instagram.userId}/media`, { fields: 'id,like_count,comments_count,timestamp', limit: String(n) });
+  const items = d.data || [];
+  if (!items.length) return { avgViews: 0, avgLikes: 0, avgComments: 0, sample: 0 };
+  let views = 0, withViews = 0;
+  for (const m of items) {
+    try {
+      const ins = await api(p, 'GET', `/${m.id}/insights`, { metric: 'views' });
+      const v = ins.data && ins.data[0] && ins.data[0].values && ins.data[0].values[0] ? ins.data[0].values[0].value : null;
+      if (v != null) { views += Number(v) || 0; withViews++; }
+    } catch (_) {}
+  }
+  const sum = (k) => items.reduce((a, m) => a + (Number(m[k]) || 0), 0);
+  return {
+    avgViews: withViews ? Math.round(views / withViews) : null,
+    avgLikes: Math.round(sum('like_count') / items.length),
+    avgComments: Math.round(sum('comments_count') / items.length),
+    sample: items.length,
+  };
+}
+
 /** Tokens longos do Instagram duram 60 dias; renovamos a cada ~7 dias */
 async function refreshToken(p) {
   if (!p.instagram.accessToken || isFbToken(p)) return; // token da Meta (EAA…) não expira / não usa essa renovação
@@ -180,4 +203,4 @@ async function refreshToken(p) {
   }
 }
 
-module.exports = { postReel, postImages, accountStats, mediaStats, refreshToken };
+module.exports = { postReel, postImages, accountStats, mediaStats, recentAverages, refreshToken };

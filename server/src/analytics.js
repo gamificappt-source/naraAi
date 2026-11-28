@@ -12,21 +12,40 @@ function all() {
   return readJSON(STATS_FILE, {});
 }
 
+/** Números de um perfil (seguidores, posts e média dos últimos posts da conta) */
+async function profileStats(p) {
+  const s = { name: p.name, at: new Date().toISOString() };
+  if (p.youtube.refreshToken) {
+    try { s.youtube = await youtube.channelStats(p); } catch (e) { s.youtubeError = e.message; }
+  }
+  if (p.instagram.accessToken) {
+    try {
+      s.instagram = await instagram.accountStats(p);
+      try { Object.assign(s.instagram, await instagram.recentAverages(p)); } catch (e) { logger.warn('Média do Instagram:', e.message.slice(0, 150)); }
+    } catch (e) { s.instagramError = e.message; }
+  }
+  return s;
+}
+
+/** Atualiza só um perfil (usado ao abrir a página do perfil e no "Testar conexão") */
+async function refreshProfile(profileId) {
+  const p = config.getProfile(profileId);
+  if (!p) throw new Error('Perfil não encontrado');
+  const today = nowInTz(config.load().settings.timezone).date;
+  const s = await profileStats(p);
+  const stats = all();
+  stats[today] = stats[today] || {};
+  stats[today][p.id] = s;
+  writeJSON(STATS_FILE, stats);
+  return s;
+}
+
 async function snapshot() {
   const c = config.load();
   const today = nowInTz(c.settings.timezone).date;
   const stats = all();
   stats[today] = stats[today] || {};
-  for (const p of c.profiles) {
-    const s = { name: p.name };
-    if (p.youtube.refreshToken) {
-      try { s.youtube = await youtube.channelStats(p); } catch (e) { s.youtubeError = e.message; }
-    }
-    if (p.instagram.accessToken) {
-      try { s.instagram = await instagram.accountStats(p); } catch (e) { s.instagramError = e.message; }
-    }
-    stats[today][p.id] = s;
-  }
+  for (const p of c.profiles) stats[today][p.id] = await profileStats(p);
   // desempenho dos posts dos últimos 3 dias
   const since = Date.now() - 3 * 86400000;
   const recent = jobs.list().filter((j) => j.status === 'done' && j.postedAt && new Date(j.postedAt).getTime() > since);
@@ -83,4 +102,4 @@ function summary() {
   return { comparadoCom: prevKey || null, perfis: out, postsRecentes: posts, falhas: failures };
 }
 
-module.exports = { snapshot, summary, all };
+module.exports = { snapshot, summary, all, refreshProfile };
