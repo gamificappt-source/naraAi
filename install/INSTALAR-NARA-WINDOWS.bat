@@ -90,19 +90,8 @@ if ($scripts -and -not (Get-Command edge-tts -ErrorAction SilentlyContinue)) {
   RefreshPath
 }
 
-Passo "Baixando fontes das legendas"
-$fonts = Join-Path $Dir 'server\data\fonts'
-New-Item -ItemType Directory -Force -Path $fonts, (Join-Path $Dir 'server\data\music') | Out-Null
-$B = 'https://raw.githubusercontent.com/google/fonts/main'
-$lista = @{
-  'Anton-Regular.ttf' = 'ofl/anton/Anton-Regular.ttf'; 'BebasNeue-Regular.ttf' = 'ofl/bebasneue/BebasNeue-Regular.ttf'
-  'Poppins-Bold.ttf' = 'ofl/poppins/Poppins-Bold.ttf'; 'Poppins-Regular.ttf' = 'ofl/poppins/Poppins-Regular.ttf'
-  'Montserrat.ttf' = 'ofl/montserrat/Montserrat%5Bwght%5D.ttf'; 'Roboto.ttf' = 'ofl/roboto/Roboto%5Bwdth,wght%5D.ttf'
-}
-foreach ($k in $lista.Keys) {
-  $dest = Join-Path $fonts $k
-  if (-not (Test-Path $dest)) { try { Invoke-WebRequest "$B/$($lista[$k])" -OutFile $dest -UseBasicParsing } catch { Write-Host "   (falhou $k - tudo bem)" } }
-}
+Passo "Preparando pastas (as fontes a Nara baixa sozinha na primeira vez que liga)"
+New-Item -ItemType Directory -Force -Path (Join-Path $Dir 'server\data\fonts'), (Join-Path $Dir 'server\data\music') | Out-Null
 
 Passo "Deixando o PC sempre ligado (sem suspender na tomada)"
 powercfg /change standby-timeout-ac 0

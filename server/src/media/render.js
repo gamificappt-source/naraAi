@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config');
 const { run, DATA_DIR, ensureDir, logger } = require('../util');
+const fonts = require('./fonts');
 
 const FONTS_DIR = ensureDir(path.join(DATA_DIR, 'fonts'));
 const MUSIC_DIR = ensureDir(path.join(DATA_DIR, 'music'));
@@ -57,7 +58,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Main,${sub.font || 'Anton'},${size},${assColor(sub.color)},${assColor(sub.highlight)},${assColor(sub.outline)},&H80000000,-1,0,0,0,100,100,1,0,1,${Math.max(3, Math.round(size / 14))},${Math.round(size / 25)},${align},${Math.round(60 * scale)},${Math.round(60 * scale)},${marginV},1
+Style: Main,${fonts.resolve(sub.font, 'Anton')},${size},${assColor(sub.color)},${assColor(sub.highlight)},${assColor(sub.outline)},&H80000000,0,0,0,0,100,100,1,0,1,${Math.max(3, Math.round(size / 14))},${Math.round(size / 25)},${align},${Math.round(60 * scale)},${Math.round(60 * scale)},${marginV},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -100,6 +101,32 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     });
   }
   return header + events.join('\n') + '\n';
+}
+
+// Legenda automática: só a fonte é sua; cores, tamanho e posição a Nara decide
+function saturation(hex) {
+  const h = String(hex || '').replace('#', '');
+  if (h.length < 6) return 0;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  return mx === 0 ? 0 : ((mx - mn) / mx) * mx; // vivo e claro
+}
+function autoSubtitle(profile, W, H) {
+  const s = profile.subtitle || {};
+  if (s.auto === false) return s;
+  const long = W > H;
+  const pal = (profile.palette || []).filter((c) => /^#[0-9a-f]{6}$/i.test(c));
+  const vivid = pal.slice().sort((a, b) => saturation(b) - saturation(a))[0];
+  return {
+    font: s.font || 'Anton',
+    size: long ? 64 : 82,
+    color: '#FFFFFF',
+    outline: '#000000',
+    highlight: vivid && saturation(vivid) > 0.35 ? vivid : '#FFD400',
+    position: long ? 'bottom' : 'middle',
+    uppercase: true,
+    wordsPerLine: long ? 5 : 3,
+  };
 }
 
 function pickMusic(profileId) {
@@ -149,12 +176,12 @@ async function renderVideo({ dir, scenes, audio, narration, profile, logo = null
   fs.writeFileSync(path.join(dir, 'clips.txt'), clipList.map((c) => `file '${path.basename(c)}'`).join('\n'));
   await run('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', 'clips.txt', '-c', 'copy', 'visual.mp4'], { cwd: dir });
 
-  let subs = buildSubtitles(narration, total, profile.subtitle || {}, W, H);
+  let subs = buildSubtitles(narration, total, autoSubtitle(profile, W, H), W, H);
   const endT = total + 0.15;
   if (endDur && profile.endCardText) {
     const sc = H > W ? W / 1080 : H / 1080;
     const st = profile.subtitle || {};
-    const endStyle = `Style: End,${st.font || 'Anton'},${Math.round(64 * sc)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,1,0,1,${Math.max(2, Math.round(4 * sc))},0,2,60,60,${Math.round(H * 0.2)},1`;
+    const endStyle = `Style: End,${fonts.resolve(st.font, 'Anton')},${Math.round(64 * sc)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,1,0,1,${Math.max(2, Math.round(4 * sc))},0,2,60,60,${Math.round(H * 0.2)},1`;
     subs = subs.replace('\n\n[Events]', `\n${endStyle}\n\n[Events]`);
     subs += `Dialogue: 1,${assTime(endT + 0.3)},${assTime(endT + endDur)},End,,0,0,0,,{\\fad(300,0)}${assEscape(profile.endCardText)}\n`;
   }
@@ -214,7 +241,8 @@ async function renderSlide({ dir, index, total, slide, image, profile, handle })
   const W = 1080, H = 1350;
   const pal = profile.palette && profile.palette.length ? profile.palette : ['#0B0F1A', '#E63946', '#F1FAEE'];
   const [bg, accent, light] = [pal[0], pal[1] || '#E63946', pal[2] || '#FFFFFF'];
-  const font = profile.carouselFont || 'Poppins';
+  const font = fonts.resolve(profile.carouselFont, 'Poppins ExtraBold');
+  const bodyFont = fonts.resolve(profile.carouselBodyFont || profile.carouselFont, 'Poppins Regular');
   const isCover = index === 0;
   const ass = `[Script Info]
 ScriptType: v4.00+
@@ -224,9 +252,9 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Head,${font},${isCover ? 92 : 70},${assColor(isCover ? light : accent)},&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,${isCover ? 4 : 2},2,${isCover ? 2 : 1},70,70,${isCover ? 170 : 360},1
-Style: Body,${font},44,${assColor(light)},&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,7,70,70,0,1
-Style: Small,${font},30,${assColor(light, 0x30)},&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,1,0,1,1,0,3,60,60,50,1
+Style: Head,${font},${isCover ? 92 : 70},${assColor(isCover ? light : accent)},&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,${isCover ? 4 : 2},2,${isCover ? 2 : 1},70,70,${isCover ? 170 : 360},1
+Style: Body,${bodyFont},44,${assColor(light)},&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,7,70,70,0,1
+Style: Small,${bodyFont},30,${assColor(light, 0x30)},&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,1,0,1,1,0,3,60,60,50,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

@@ -6,19 +6,19 @@
 <meta name="theme-color" content="#0B0D10">
 <title>NARA</title>
 <style>
-@font-face{font-family:"Anton";src:url(/assets/fonts/Anton-Regular.ttf) format("truetype");font-display:swap}
-@font-face{font-family:"Poppins";src:url(/assets/fonts/Poppins-Regular.ttf) format("truetype");font-weight:400;font-display:swap}
-@font-face{font-family:"Poppins";src:url(/assets/fonts/Poppins-Bold.ttf) format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Anton";src:url(/assets/fonts/Anton-400.ttf) format("truetype");font-display:swap}
+@font-face{font-family:"Poppins";src:url(/assets/fonts/Poppins-400.ttf) format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Poppins";src:url(/assets/fonts/Poppins-700.ttf) format("truetype");font-weight:700;font-display:swap}
 :root{
   --bg:#0B0D10;--bg2:#101318;--panel:#14171C;--panel2:#1B1F26;--panel3:#232832;--line:#2A303A;
   --text:#EEF0F3;--muted:#8B94A1;--dim:#5E6672;
   --lime:#C8FF2E;--lime2:#A8E000;--ink:#0B0D10;--red:#FF5D5D;--amber:#FFB547;--blue:#73A9FF;--violet:#9B7BFF;
-  --r:22px;--r2:14px;--shadow:0 10px 40px rgba(0,0,0,.35);
+  --r:18px;--r2:12px;--shadow:0 10px 40px rgba(0,0,0,.35);
   --display:"Anton",Impact,"Arial Narrow",sans-serif;--body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
 body{min-height:100vh;background:radial-gradient(1200px 600px at 85% -10%,rgba(200,255,46,.07),transparent 60%),var(--bg)}
 a{color:var(--lime)}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -26,11 +26,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 .hidden{display:none!important}
 
 /* ---------- topo ---------- */
-.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;padding:14px clamp(14px,3vw,32px);background:rgba(11,13,16,.82);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.04)}
-.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:28px;letter-spacing:.04em;text-decoration:none;color:var(--text)}
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:16px;padding:10px clamp(14px,3vw,28px);background:rgba(11,13,16,.82);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.04)}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:24px;letter-spacing:.04em;text-decoration:none;color:var(--text)}
 .logo i{width:12px;height:12px;border-radius:50%;background:var(--lime);box-shadow:0 0 18px var(--lime)}
 .nav{margin:0 auto;display:flex;gap:4px;background:#F2F3F5;border-radius:999px;padding:5px}
-.nav a{display:flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;color:#22262C;text-decoration:none;font-size:14px;font-weight:700;white-space:nowrap;transition:.15s}
+.nav a{display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:999px;color:#22262C;text-decoration:none;font-size:14px;font-weight:700;white-space:nowrap;transition:.15s}
 .nav a svg{width:17px;height:17px}
 .nav a:hover{background:#E2E5E9}
 .nav a.on{background:var(--lime);color:var(--ink)}
@@ -42,39 +42,40 @@ button,input,select,textarea{font:inherit;color:inherit}
 .iconbtn:hover{border-color:var(--lime)}
 .iconbtn svg{width:18px;height:18px}
 
-main{max-width:1440px;margin:0 auto;padding:clamp(16px,3vw,34px) clamp(14px,3vw,32px) 120px}
+main{max-width:1320px;margin:0 auto;padding:clamp(14px,2.2vw,24px) clamp(14px,3vw,28px) 110px}
 
 /* ---------- tipografia ---------- */
-.h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,7vw,92px);line-height:.92;letter-spacing:.01em;text-transform:uppercase;margin:0}
-.h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,3vw,36px);line-height:1;text-transform:uppercase;margin:0;letter-spacing:.02em}
+.h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,4vw,48px);line-height:.92;letter-spacing:.01em;text-transform:uppercase;margin:0}
+.h2{font-family:var(--display);font-weight:400;font-size:clamp(18px,1.7vw,22px);line-height:1;text-transform:uppercase;margin:0;letter-spacing:.02em}
 .h3{font-size:16px;font-weight:700;margin:0}
 .label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .muted{color:var(--muted)}.dim{color:var(--dim)}
 .tag{display:inline-block;background:var(--lime);color:var(--ink);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:4px}
-.head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:26px}
-.head p{margin:10px 0 0;color:var(--muted)}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.head p{margin:6px 0 0;color:var(--muted);font-size:13px}
 
 /* ---------- cartões ---------- */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:clamp(16px,2vw,24px)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
 .card.light{background:#F4F5F7;color:#14171C;border-color:#F4F5F7}
 .card.light .label,.card.light .muted{color:#6B7380}
 .card.lime{background:var(--lime);color:var(--ink);border-color:var(--lime)}
 .card.lime .label{color:rgba(11,13,16,.65)}
-.cardh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-.grid{display:grid;gap:16px}
+.cardh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.cardh p{font-size:12.5px}
+.grid{display:grid;gap:12px}
 .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
-.split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
-.kpi .num{font-family:var(--display);font-size:clamp(36px,4vw,52px);line-height:1;margin:10px 0 6px}
-.kpi .var{font-size:13px;font-weight:700}
+.split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px}
+.kpi .num{font-family:var(--display);font-size:clamp(26px,2.6vw,34px);line-height:1;margin:6px 0 4px}
+.kpi .var{font-size:12px;font-weight:700}
 .up{color:var(--lime)}.down{color:var(--red)}
 .card.light .up{color:#4C8A00}
-.arrow{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;opacity:.6}
+.arrow{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;opacity:.6}
 .rel{position:relative}
 
 /* ---------- botões ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap;transition:.15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;white-space:nowrap;transition:.15s}
 .btn:hover{border-color:var(--muted)}
 .btn svg{width:17px;height:17px}
 .btn.pri{background:var(--lime);border-color:var(--lime);color:var(--ink)}
@@ -82,49 +83,50 @@ main{max-width:1440px;margin:0 auto;padding:clamp(16px,3vw,34px) clamp(14px,3vw,
 .btn.white{background:#fff;color:var(--ink);border-color:#fff}
 .btn.ghost{background:transparent}
 .btn.danger{color:var(--red);border-color:rgba(255,93,93,.4);background:transparent}
-.btn.sm{padding:7px 13px;font-size:13px}
+.btn.sm{padding:6px 11px;font-size:12px}
 .btn:disabled{opacity:.5;cursor:wait}
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .between{justify-content:space-between}
 
 /* ---------- formulários ---------- */
-.field{display:flex;flex-direction:column;gap:7px;min-width:0}
-.field>span{font-size:13px;font-weight:700;color:#C9CED6}
-.field small{color:var(--muted);font-size:12.5px;line-height:1.4}
-input[type=text],input[type=password],input[type=number],input[type=time],input[type=url],select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;outline:none;transition:.15s;min-width:0}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span{font-size:12.5px;font-weight:700;color:#C9CED6}
+.field small{color:var(--muted);font-size:11.5px;line-height:1.4}
+input[type=text],input[type=password],input[type=number],input[type=time],input[type=url],select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;outline:none;transition:.15s;min-width:0}
 input:focus,select:focus,textarea:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(200,255,46,.12)}
-textarea{min-height:110px;resize:vertical;line-height:1.5}
-textarea.big{min-height:230px;font-family:var(--mono);font-size:13.5px}
+textarea{min-height:72px;resize:vertical;line-height:1.5}
+textarea.big{min-height:150px;font-family:var(--mono);font-size:12.5px}
 input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg2);padding:4px;cursor:pointer}
-.fields{display:grid;gap:16px}
+.fields{display:grid;gap:11px}
+.secret{-webkit-text-security:disc;font-family:var(--mono)}
 .f2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .f3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .f4{grid-template-columns:repeat(4,minmax(0,1fr))}
-.switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg2);cursor:pointer}
-.switch b{font-size:14px}.switch small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
-.switch input{appearance:none;width:46px;height:26px;border-radius:999px;background:var(--panel3);position:relative;cursor:pointer;flex:none;transition:.2s}
-.switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);cursor:pointer}
+.switch b{font-size:13px}.switch small{display:block;color:var(--muted);font-size:11.5px;font-weight:400}
+.switch input{appearance:none;width:40px;height:22px;border-radius:999px;background:var(--panel3);position:relative;cursor:pointer;flex:none;transition:.2s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
 .switch input:checked{background:var(--lime)}
-.switch input:checked::after{left:23px;background:var(--ink)}
+.switch input:checked::after{left:21px;background:var(--ink)}
 .seg{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px;flex-wrap:wrap}
 .seg button{border:0;background:transparent;padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:700;font-size:13px;color:var(--muted)}
 .seg button.on{background:var(--lime);color:var(--ink)}
 .days{display:flex;gap:6px;flex-wrap:wrap}
-.days button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-weight:700}
+.days button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-weight:700}
 .days button.on{background:var(--lime);border-color:var(--lime);color:var(--ink)}
 .pills{display:flex;gap:8px;flex-wrap:wrap}
 .pill{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-size:13px;font-weight:700}
 .pill:hover,.pill.on{border-color:var(--lime);color:var(--lime)}
 
 /* ---------- biblioteca de perfis ---------- */
-.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
 .cover{position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;cursor:pointer;background:linear-gradient(150deg,#1d232c,#0f1216);border:1px solid var(--line);transition:transform .2s,box-shadow .2s,border-color .2s;text-decoration:none;color:var(--text);display:block}
 .cover:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--lime)}
 .cover img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .cover .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 30%,rgba(0,0,0,.88))}
 .cover .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:120px;color:rgba(255,255,255,.06)}
 .cover .info{position:absolute;left:16px;right:16px;bottom:16px}
-.cover .nm{font-family:var(--display);font-size:30px;line-height:1;text-transform:uppercase;margin:8px 0 4px;word-break:break-word}
+.cover .nm{font-family:var(--display);font-size:22px;line-height:1;text-transform:uppercase;margin:8px 0 4px;word-break:break-word}
 .cover .sub{font-size:12.5px;color:#C9CED6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cover .badges{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:6px}
 .cover .lg{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--lime);background:#000}
@@ -134,49 +136,51 @@ input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-rad
 .cover .stats b{font-size:15px}
 .new{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:2px dashed var(--line);background:transparent}
 .new:hover{border-color:var(--lime)}
-.new .plus{width:64px;height:64px;border-radius:50%;background:var(--lime);color:var(--ink);display:grid;place-items:center;font-size:34px;font-weight:700}
+.new .plus{width:48px;height:48px;border-radius:50%;background:var(--lime);color:var(--ink);display:grid;place-items:center;font-size:34px;font-weight:700}
 
 /* ---------- página do perfil ---------- */
-.hero{position:relative;border-radius:28px;overflow:hidden;min-height:260px;display:flex;align-items:flex-end;padding:clamp(18px,3vw,32px);background:#151a21;border:1px solid var(--line)}
+.hero{position:relative;border-radius:var(--r);overflow:hidden;min-height:0;display:flex;align-items:center;padding:16px 18px;background:#151a21;border:1px solid var(--line)}
 .hero .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(2px) brightness(.55);transform:scale(1.04)}
 .hero .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,13,16,.92),rgba(11,13,16,.35))}
-.hero .in{position:relative;display:flex;gap:22px;align-items:flex-end;width:100%;flex-wrap:wrap}
-.hero .lg{width:110px;height:110px;border-radius:26px;object-fit:cover;border:3px solid var(--lime);background:#000;flex:none}
-.hero .lgph{width:110px;height:110px;border-radius:26px;border:2px dashed var(--line);display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center;flex:none}
+.hero .in{position:relative;display:flex;gap:16px;align-items:center;width:100%;flex-wrap:wrap}
+.hero .lg{width:64px;height:64px;border-radius:16px;object-fit:cover;border:3px solid var(--lime);background:#000;flex:none}
+.hero .lgph{width:64px;height:64px;border-radius:16px;font-size:10px;border:2px dashed var(--line);display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center;flex:none}
 .back{display:inline-flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-weight:700;margin-bottom:14px}
 .back:hover{color:var(--text)}
-.tabs{position:sticky;top:69px;z-index:30;display:flex;gap:6px;overflow-x:auto;padding:10px 0;margin:22px 0 6px;background:linear-gradient(var(--bg) 70%,transparent);scrollbar-width:none}
+.pbody{display:grid;grid-template-columns:190px minmax(0,1fr);gap:12px;margin-top:12px;align-items:start}
+.tabs{position:sticky;top:64px;z-index:30;display:flex;flex-direction:column;gap:4px;padding:8px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tabs button{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tabs button{flex:none;border:0;background:transparent;color:var(--muted);padding:9px 12px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;display:flex;gap:9px;align-items:center;text-align:left}
+.tabs button:hover{color:var(--text);background:var(--panel2)}
 .tabs button svg{width:16px;height:16px}
 .tabs button.on{background:#F2F3F5;color:var(--ink);border-color:#F2F3F5}
 .pane{display:none}.pane.on{display:block}
-.drop{position:relative;border:2px dashed var(--line);border-radius:18px;background:var(--bg2);min-height:170px;display:grid;place-items:center;text-align:center;cursor:pointer;overflow:hidden;transition:.15s}
+.drop{position:relative;border:2px dashed var(--line);border-radius:14px;background:var(--bg2);min-height:120px;max-height:200px;aspect-ratio:16/9;display:grid;place-items:center;text-align:center;cursor:pointer;overflow:hidden;transition:.15s}
 .drop:hover,.drop.over{border-color:var(--lime)}
 .drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#07090b}
 .drop .msg{position:relative;padding:18px;color:var(--muted);font-size:13px}
 .drop .msg b{display:block;color:var(--text);font-size:14px;margin-bottom:4px}
 .drop .x{position:absolute;top:8px;right:8px;z-index:2}
 .drop.has .msg{display:none}
-.analysis{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:12.5px;color:#C9CED6;max-height:140px;overflow:auto}
-.voices{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;max-height:430px;overflow:auto;padding-right:4px}
-.voice{position:relative;border:1px solid var(--line);background:var(--bg2);border-radius:14px;padding:12px 14px;cursor:pointer;transition:.15s}
+.analysis{margin-top:8px;padding:9px 11px;border-radius:10px;background:var(--bg2);border:1px solid var(--line);font-size:11.5px;color:#C9CED6;max-height:90px;overflow:auto}
+.voices{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px;max-height:250px;overflow:auto;padding-right:4px}
+.voice{position:relative;border:1px solid var(--line);background:var(--bg2);border-radius:10px;padding:7px 10px;cursor:pointer;transition:.15s}
 .voice:hover{border-color:var(--muted)}
 .voice.on{border-color:var(--lime);background:rgba(200,255,46,.08)}
-.voice b{display:block;font-size:14px}
-.voice small{color:var(--muted);font-size:12px}
-.voice .g{position:absolute;top:10px;right:10px;font-size:10px;font-family:var(--mono);color:var(--dim);text-transform:uppercase}
+.voice b{display:block;font-size:13px}
+.voice small{color:var(--muted);font-size:11px}
+.voice .g{position:absolute;top:7px;right:8px;font-size:9px;font-family:var(--mono);color:var(--dim);text-transform:uppercase}
 .savebar{position:fixed;left:50%;bottom:22px;transform:translate(-50%,40px);opacity:0;visibility:hidden;pointer-events:none;z-index:60;display:flex;align-items:center;gap:16px;padding:10px 10px 10px 22px;border-radius:999px;background:#F2F3F5;color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.5);transition:transform .25s;font-weight:700;max-width:calc(100vw - 24px)}
 .savebar.show{transform:translate(-50%,0);opacity:1;visibility:visible;pointer-events:auto}
 .savebar{transition:transform .25s,opacity .25s,visibility .25s}
 
 /* ---------- listas ---------- */
 .list{display:flex;flex-direction:column;gap:8px}
-.item{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;background:var(--bg2);border:1px solid var(--line)}
+.item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:12px;background:var(--bg2);border:1px solid var(--line)}
 .item .t{flex:1;min-width:0}
 .item .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
 .item .t small{color:var(--muted);font-size:12.5px}
-.time{font-family:var(--display);font-size:22px;min-width:64px}
+.time{font-family:var(--display);font-size:18px;min-width:52px}
 .st{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700;background:var(--panel3);color:#C9CED6;white-space:nowrap}
 .st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .st.done{color:var(--lime);background:rgba(200,255,46,.1)}
@@ -185,7 +189,7 @@ input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-rad
 .st.awaiting_approval,.st.atrasado{color:var(--amber);background:rgba(255,181,71,.1)}
 .st.queued,.st.ready,.st.agendado{color:#C9CED6}
 .thumb{width:54px;height:72px;border-radius:10px;background:#000;object-fit:cover;flex:none}
-.job{border:1px solid var(--line);background:var(--bg2);border-radius:18px;padding:14px}
+.job{border:1px solid var(--line);background:var(--bg2);border-radius:14px;padding:10px 12px}
 .job .steps{margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:0;overflow:hidden;transition:max-height .3s}
 .job.open .steps{max-height:400px;overflow:auto}
 .job video,.job .imgs img{max-width:100%;border-radius:12px;margin-top:12px;background:#000}
@@ -201,11 +205,11 @@ input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-rad
 .msg small{display:block;font-size:11px;opacity:.6;margin-top:4px}
 .composer{display:flex;gap:8px;margin-top:12px}
 .composer input{border-radius:999px;padding:13px 18px}
-.chatbig{height:min(62vh,640px)}
+.chatbig{height:min(56vh,520px)}
 .suggest{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
 /* ---------- gráfico ---------- */
-.spark{width:100%;height:120px;display:block}
+.spark{width:100%;height:90px;display:block}
 .bars{display:flex;align-items:flex-end;gap:6px;height:90px}
 .bars div{flex:1;background:var(--panel3);border-radius:6px 6px 2px 2px;min-height:4px;position:relative}
 .bars div.hi{background:var(--lime)}
@@ -213,7 +217,7 @@ input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-rad
 /* ---------- login / toast / modal ---------- */
 .login{min-height:100vh;display:grid;place-items:center;padding:20px}
 .login .box{width:min(440px,100%)}
-.login .h1{font-size:clamp(90px,22vw,150px)}
+.login .h1{font-size:clamp(80px,18vw,130px)}
 .toast{position:fixed;top:84px;right:20px;z-index:90;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 40px))}
 .toast div{background:#F2F3F5;color:var(--ink);padding:12px 16px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:var(--shadow);animation:in .25s}
 .toast div.bad{background:var(--red);color:#fff}
@@ -223,13 +227,23 @@ input[type=color]{width:46px;height:40px;border:1px solid var(--line);border-rad
 .steps-list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;color:#C9CED6;font-size:14px}
 .steps-list b{color:var(--text)}
 code{font-family:var(--mono);background:var(--bg2);border:1px solid var(--line);padding:2px 7px;border-radius:7px;font-size:12.5px;word-break:break-all}
-.logs{font-family:var(--mono);font-size:12px;background:#07090B;border:1px solid var(--line);border-radius:14px;padding:12px;height:320px;overflow:auto;white-space:pre-wrap;color:#AEB6C1}
+.logs{font-family:var(--mono);font-size:11px;background:#07090B;border:1px solid var(--line);border-radius:12px;padding:10px;height:220px;overflow:auto;white-space:pre-wrap;color:#AEB6C1}
 .keyrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
 .keyrow .n{font-family:var(--display);font-size:22px;color:var(--dim);width:24px}
 .empty{padding:30px;text-align:center;color:var(--muted)}
+.fontgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;max-height:210px;overflow:auto;padding-right:4px}
+.fontopt{border:1px solid var(--line);background:var(--bg2);border-radius:10px;padding:7px 10px;cursor:pointer;text-align:left;color:var(--text)}
+.fontopt:hover{border-color:var(--muted)}.fontopt.on{border-color:var(--lime);background:rgba(200,255,46,.08)}
+.fontopt .aa{display:block;font-size:20px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fontopt small{color:var(--muted);font-size:10.5px}
+.fontlib{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto}
+.fontlib span{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);font-size:12px}
+.fontlib button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px}
+.fontlib button:hover{color:var(--red)}
 hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
 
 /* ---------- responsivo ---------- */
+@media (max-width:980px){.pbody{grid-template-columns:1fr}.tabs{flex-direction:row;overflow-x:auto;top:58px;padding:6px}}
 @media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.split{grid-template-columns:1fr}.f4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){
   .top{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
@@ -238,7 +252,6 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
   .nav a svg{width:20px;height:20px}
   .top .chip span{display:none}
   .g3,.g2,.f2,.f3{grid-template-columns:1fr}
-  .tabs{top:65px}
   .savebar{bottom:96px}
   main{padding-bottom:150px}
   .hero{min-height:220px}
@@ -372,7 +385,7 @@ async function refresh() {
 }
 $('#statusChip').addEventListener('click', async () => {
   const p = !S.settings.paused;
-  if (!confirm(p ? 'Pausar TODAS as postagens automáticas?' : 'Voltar a postar normalmente?')) return;
+  if (!(await ask(p ? 'Pausar TODAS as postagens automáticas?' : 'Voltar a postar normalmente?', p ? 'Pausar' : 'Retomar'))) return;
   await api('/api/settings', { body: { paused: p } });
   await refresh(); toast(p ? 'Postagens pausadas' : 'Postagens retomadas'); render();
 });
@@ -418,10 +431,17 @@ function spark(vals, w = 600, h = 120) {
 let pollTimer = null;
 function current() { const h = location.hash.replace(/^#\/?/, '') || 'painel'; const [v, id] = h.split('/'); return { v, id }; }
 let skipHash = false;
-window.addEventListener('hashchange', () => {
+let lastHash = location.hash;
+window.addEventListener('hashchange', async () => {
   if (skipHash) { skipHash = false; return; }
-  if (dirty && !confirm('Você tem alterações não salvas. Sair sem salvar?')) { skipHash = true; history.back(); return; }
-  setDirty(false); render(); window.scrollTo(0, 0);
+  if (dirty) {
+    const target = location.hash;
+    skipHash = true; location.hash = lastHash;
+    if (!(await ask('Você tem alterações não salvas. Sair sem salvar?', 'Sair sem salvar', 'Continuar editando', true))) return;
+    setDirty(false); location.hash = target; return;
+  }
+  lastHash = location.hash;
+  render(); window.scrollTo(0, 0);
 });
 function render() {
   const { v, id } = current();
@@ -435,7 +455,6 @@ function setDirty(on, fn) {
 }
 $('#saveBtn').addEventListener('click', () => saveFn && busy($('#saveBtn'), saveFn));
 $('#discardBtn').addEventListener('click', () => { setDirty(false); render(); });
-window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
 /* =================== PAINEL =================== */
 function greeting() { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; }
@@ -462,15 +481,15 @@ function viewPainel() {
     <div class="card kpi rel"><div class="label">Em produção</div><div class="num">${queue.length}</div><div class="var muted">${S.busy ? 'trabalhando agora' : 'fila livre'}</div></div>
     <div class="card light kpi rel"><div class="label">Aguardando você</div><div class="num">${waiting.length}</div><div class="var muted">${waiting.length ? 'aprove abaixo' : 'nada pendente'}</div></div>
   </div>
-  <div class="split" style="margin-top:16px">
+  <div class="split" style="margin-top:12px">
     <div class="card"><div class="cardh"><div><div class="label">Crescimento</div><h2 class="h2">Seguidores — 30 dias</h2></div><button class="btn sm" id="bStats">Atualizar números</button></div>${spark(ts.map((x) => x.v))}</div>
     <div class="card"><div class="cardh"><div><div class="label">Hoje</div><h2 class="h2">Agenda</h2></div><a class="btn sm ghost" href="#/agenda">Ver tudo</a></div>
       <div class="list">${today.slice(0, 6).map(slotRow).join('') || '<div class="empty">Nada agendado hoje. Crie um perfil e defina a frequência.</div>'}</div></div>
   </div>
-  <div class="split" style="margin-top:16px">
+  <div class="split" style="margin-top:12px">
     <div class="card"><div class="cardh"><div><div class="label">Produção</div><h2 class="h2">Últimos conteúdos</h2></div></div><div class="list" id="jobs">${S.jobs.slice(0, 8).map(jobCard).join('') || '<div class="empty">Ainda não há conteúdos. Abra um perfil e clique em “Produzir agora”.</div>'}</div></div>
     <div class="card" style="display:flex;flex-direction:column"><div class="cardh"><div><div class="label">Converse</div><h2 class="h2">Nara</h2></div><a class="btn sm ghost" href="#/nara">Abrir</a></div>
-      <div class="chat" id="chat" style="height:360px">${chatHtml()}</div>${composer()}</div>
+      <div class="chat" id="chat" style="height:300px">${chatHtml()}</div>${composer()}</div>
   </div>`;
   bindChat(); bindJobs();
   $('#bBrief').onclick = (e) => busy(e.currentTarget, async () => { const r = await api('/api/nara/briefing', { body: {} }); toast('A Nara está falando…'); await refresh(); renderChat(); return r; });
@@ -518,7 +537,7 @@ function bindJobs(root = document) {
       box.innerHTML = j.type === 'video' ? `<video controls autoplay playsinline src="${fileUrl(j.files[0])}" style="max-height:70vh"></video>` : `<div class="imgs">${j.files.map((f) => `<img src="${fileUrl(f)}" loading="lazy">`).join('')}</div>`;
       return;
     }
-    if (act === 'del' && !confirm('Apagar este conteúdo e os arquivos dele?')) return;
+    if (act === 'del' && !(await ask('Apagar este conteúdo e os arquivos dele?', 'Apagar', 'Cancelar', true))) return;
     await busy(b, async () => {
       if (act === 'del') await api(`/api/jobs/${id}`, { method: 'DELETE' });
       else await api(`/api/jobs/${id}/${act}`, { body: {} });
@@ -586,6 +605,16 @@ function newProfile() {
   };
 }
 function modal(html) { closeModal(); const m = document.createElement('div'); m.className = 'modal'; m.id = 'modal'; m.innerHTML = `<div class="card">${html}</div>`; document.body.appendChild(m); m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('[data-close]')) closeModal(); }); }
+/** Pergunta numa janela da própria página (no lugar do confirm do navegador) */
+function ask(msg, yes = 'Sim', no = 'Cancelar', danger = false) {
+  return new Promise((resolve) => {
+    modal(`<p style="margin:0 0 16px;font-size:15px;font-weight:700">${esc(msg)}</p><div class="row" style="justify-content:flex-end"><button class="btn ghost" id="askNo">${esc(no)}</button><button class="btn ${danger ? 'danger' : 'pri'}" id="askYes">${esc(yes)}</button></div>`);
+    const done = (v) => { closeModal(); resolve(v); };
+    $('#askYes').onclick = () => done(true);
+    $('#askNo').onclick = () => done(false);
+    $('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal') resolve(false); });
+  });
+}
 function closeModal() { const m = $('#modal'); if (m) m.remove(); }
 
 /* =================== PERFIL (detalhes) =================== */
@@ -599,7 +628,43 @@ const TONES = [
   ['Épico', 'Fale em português do Brasil, com voz grave e épica, como um trailer de cinema.'],
 ];
 const YT_CATS = [['1', 'Filmes e animação'], ['10', 'Música'], ['15', 'Animais'], ['17', 'Esportes'], ['19', 'Viagens'], ['20', 'Jogos'], ['22', 'Pessoas e blogs'], ['23', 'Comédia'], ['24', 'Entretenimento'], ['25', 'Notícias e política'], ['26', 'Estilo e dicas'], ['27', 'Educação'], ['28', 'Ciência e tecnologia']];
-const FONTS = ['Anton', 'Bebas Neue', 'Poppins', 'Montserrat', 'Roboto'];
+let FONTLIB = [];
+/** Carrega a biblioteca de fontes e deixa cada uma disponível na página (para a prévia) */
+async function loadFonts() {
+  FONTLIB = (await api('/api/fonts').catch(() => ({ fonts: [] }))).fonts || [];
+  let st = $('#fontfaces');
+  if (!st) { st = document.createElement('style'); st.id = 'fontfaces'; document.head.appendChild(st); }
+  st.textContent = FONTLIB.map((f) => `@font-face{font-family:"nf-${f.file}";src:url(/assets/fonts/${encodeURIComponent(f.file)})}`).join('\n');
+}
+function fontMatch(v) { return FONTLIB.find((f) => f.name === v || f.label === v) || FONTLIB.find((f) => f.family === v); }
+function fontPicker(field) {
+  const cur = fontMatch(getPath(DRAFT, field) || '');
+  return `<div class="fontgrid" data-fp="${field}">${FONTLIB.map((f) => `<button type="button" class="fontopt ${cur && cur.file === f.file ? 'on' : ''}" data-font="${esc(f.name)}"><span class="aa" style="font-family:'nf-${esc(f.file)}'">Aa ${esc(f.family)}</span><small>${esc(f.label.replace(f.family, '').trim() || 'Regular')}</small></button>`).join('') || '<div class="empty">Nenhuma fonte ainda. Adicione abaixo.</div>'}</div>`;
+}
+function fontAdder() {
+  return `<div class="fields"><textarea id="fontCode" placeholder='&lt;link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&amp;display=swap" rel="stylesheet"&gt;' style="min-height:64px;font-family:var(--mono);font-size:12px"></textarea>
+    <div class="row between"><small class="muted">Também aceita só os nomes: “Inter, Oswald”.</small><button type="button" class="btn pri sm" id="fontAdd">Baixar fontes</button></div>
+    <div class="fontlib" id="fontLib">${FONTLIB.map((f) => `<span style="font-family:'nf-${esc(f.file)}'">${esc(f.label)}<button type="button" data-delfont="${esc(f.file)}" title="Remover">×</button></span>`).join('')}</div></div>`;
+}
+function bindFonts(onChange) {
+  $$('[data-fp]').forEach((g) => g.addEventListener('click', (e) => {
+    const b = e.target.closest('.fontopt'); if (!b) return;
+    $$('.fontopt', g).forEach((x) => x.classList.remove('on')); b.classList.add('on');
+    if (onChange) onChange(g.dataset.fp, b.dataset.font);
+  }));
+  const add = $('#fontAdd');
+  if (add) add.onclick = (e) => busy(e.currentTarget, async () => {
+    if (dirty && saveFn) await saveFn();
+    const r = await api('/api/fonts', { body: { code: $('#fontCode').value } });
+    toast(`${r.added.length} variação(ões) instalada(s)!`);
+    await loadFonts(); render();
+  });
+  $$('[data-delfont]').forEach((b) => (b.onclick = async () => {
+    if (!(await ask('Remover esta fonte da biblioteca?', 'Remover', 'Cancelar', true))) return;
+    await api('/api/fonts/' + encodeURIComponent(b.dataset.delfont), { method: 'DELETE' });
+    await loadFonts(); render();
+  }));
+}
 
 function fld(label, f, type = 'text', extra = {}) {
   const v = getPath(DRAFT, f);
@@ -607,6 +672,8 @@ function fld(label, f, type = 'text', extra = {}) {
   if (type === 'textarea') return `<label class="field"><span>${label}</span><textarea data-f="${f}" class="${extra.big ? 'big' : ''}" placeholder="${esc(extra.ph || '')}">${esc(v)}</textarea>${help}</label>`;
   if (type === 'select') return `<label class="field"><span>${label}</span><select data-f="${f}">${extra.opts.map(([k, t]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>${help}</label>`;
   if (type === 'switch') return `<label class="switch"><span><b>${label}</b>${extra.help ? `<small>${extra.help}</small>` : ''}</span><input type="checkbox" data-f="${f}" ${v ? 'checked' : ''}></label>`;
+  if (type === 'secret') return `<label class="field"><span>${label}</span><input type="text" class="secret" data-f="${f}" value="" placeholder="${esc(v || extra.ph || '')}" autocomplete="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">${help}</label>`;
+  if (type === 'list') return `<label class="field"><span>${label}</span><input type="text" data-f="${f}" value="${esc(v ?? '')}" list="${extra.list}" placeholder="${esc(extra.ph || '')}">${help}</label>`;
   if (type === 'color') return `<label class="field"><span>${label}</span><span class="row" style="flex-wrap:nowrap"><input type="color" data-f="${f}" value="${esc(v || '#ffffff')}"><input type="text" data-fc="${f}" value="${esc(v || '')}" style="font-family:var(--mono)"></span></label>`;
   return `<label class="field"><span>${label}</span><input type="${type}" data-f="${f}" value="${esc(v ?? '')}" placeholder="${esc(extra.ph || '')}" ${type === 'number' ? `min="${extra.min ?? 0}" max="${extra.max ?? 999}"` : ''}>${help}</label>`;
 }
@@ -618,6 +685,7 @@ async function viewPerfil(id) {
   const p = profById(id);
   if (!p) { $('#view').innerHTML = '<div class="empty">Perfil não encontrado. <a href="#/perfis">Voltar</a></div>'; return; }
   if (!VOICES) VOICES = await api('/api/voices').catch(() => ({ google: [], nara: [] }));
+  await loadFonts();
   DRAFT = structuredClone(p);
   const tab = sessionStorage.getItem('ptab') || 'id';
   $('#view').innerHTML = `<div id="pwrap">
@@ -626,7 +694,7 @@ async function viewPerfil(id) {
     ${p.coverImage ? `<img class="bg" src="${refUrl(p.coverImage)}" alt="">` : ''}<div class="shade"></div>
     <div class="in">
       ${p.logoImage ? `<img class="lg" src="${refUrl(p.logoImage)}" alt="">` : `<div class="lgph">sem logo</div>`}
-      <div style="flex:1;min-width:220px"><div class="label">${esc(p.niche || 'Perfil')}</div><h1 class="h1" style="font-size:clamp(40px,6vw,76px)">${esc(p.name)}</h1>
+      <div style="flex:1;min-width:220px"><div class="label">${esc(p.niche || 'Perfil')}</div><h1 class="h1" style="font-size:clamp(26px,3.4vw,40px)">${esc(p.name)}</h1>
         <div class="row" style="margin-top:12px">
           <span class="chip">${ICON.yt.replace('<svg', '<svg width="14" height="14"')} ${p.youtube.refreshToken ? esc(p.youtube.channelTitle || 'Conectado') : 'YouTube não conectado'}</span>
           <span class="chip">${ICON.ig.replace('<svg', '<svg width="14" height="14"')} ${p.instagram.username ? '@' + esc(p.instagram.username) : p.instagram.accessToken ? 'Token salvo' : 'Instagram não conectado'}</span>
@@ -637,7 +705,8 @@ async function viewPerfil(id) {
       </div>
     </div>
   </section>
-  <div id="pdash" style="margin-top:16px"></div>
+  <div id="pdash" style="margin-top:12px"></div>
+  <div class="pbody">
   <div class="tabs" id="ptabs">
     <button data-t="id">${ICON.user} Identidade</button><button data-t="video">${ICON.film} Vídeo</button><button data-t="voz">${ICON.wave} Voz</button>
     <button data-t="car">${ICON.layers} Carrossel</button><button data-t="freq">${ICON.cal} Frequência</button><button data-t="pub">${ICON.send} Publicação</button>
@@ -670,21 +739,18 @@ async function viewPerfil(id) {
         <div class="card"><div class="cardh"><h2 class="h2">Formato e duração</h2></div><div class="fields">
           <div class="field"><span>Duração de cada vídeo</span><div class="row" style="flex-wrap:nowrap"><input type="number" id="durMin" min="0" max="60" value="${Math.floor((p.videoSeconds || 0) / 60)}" style="max-width:110px"><span class="muted">min</span><input type="number" id="durSec" min="0" max="59" value="${(p.videoSeconds || 0) % 60}" style="max-width:110px"><span class="muted">seg</span></div><small>Shorts e Reels: até 1 min (máx. 3 min). Vídeo longo: o tempo que quiser.</small></div>
           ${fld('Formato', 'videoFormat', 'select', { opts: [['short', 'Vertical 9:16 — Shorts / Reels'], ['long', 'Horizontal 16:9 — YouTube longo']] })}
-          ${fld('Estilo visual', 'videoStyle', 'select', { opts: [['2d', '2D ilustrado'], ['3d', '3D'], ['realista', 'Realista (fotos)'], ['documentario', 'Documentário / investigação'], ['anime', 'Anime'], ['minimalista', 'Minimalista']] })}
+          ${fld('Estilo visual', 'videoStyle', 'list', { list: 'styles', ph: 'Escreva do seu jeito: 2D investigação, traço grosso, tons escuros…', help: 'Texto livre. As sugestões são só atalhos.' })}
+          <datalist id="styles"><option value="2D ilustrado (flat / cartoon)"><option value="3D estilo Pixar"><option value="Fotos realistas"><option value="Documentário / investigação (fotos reais, arquivos, mapas, recortes de jornal)"><option value="Anime"><option value="Minimalista com tipografia forte"></datalist>
           ${fld('De onde vêm as imagens', 'imageSource', 'select', { opts: [['mix', 'Misto (internet + IA)'], ['web', 'Só fotos reais da internet'], ['ai', 'Só geradas por IA']] })}
           ${fld('Música de fundo', 'music', 'switch', { help: 'Coloque MP3 sem direitos autorais em server\\data\\music' })}
         </div></div>
         <div class="card"><div class="cardh"><h2 class="h2">Referência de layout</h2><span class="label">a IA copia o estilo</span></div>
           ${dropzone('reference', p.referenceImage, 'Imagem de referência do vídeo', 'Um frame do estilo que você quer.')}
           ${p.styleAnalysis ? `<div class="analysis"><b>O que a Claude entendeu:</b> ${esc(p.styleAnalysis)}</div>` : ''}</div>
-        <div class="card" style="grid-column:1/-1"><div class="cardh"><h2 class="h2">Legendas</h2><span class="label">palavra em destaque</span></div><div class="fields f4">
-          ${fld('Fonte', 'subtitle.font', 'select', { opts: FONTS.map((f) => [f, f]) })}
-          ${fld('Tamanho', 'subtitle.size', 'number', { min: 30, max: 160 })}
-          ${fld('Posição', 'subtitle.position', 'select', { opts: [['top', 'Em cima'], ['middle', 'No meio'], ['bottom', 'Embaixo']] })}
-          ${fld('Palavras por vez', 'subtitle.wordsPerLine', 'number', { min: 1, max: 8 })}
-          ${fld('Cor do texto', 'subtitle.color', 'color')}${fld('Cor do destaque', 'subtitle.highlight', 'color')}${fld('Contorno', 'subtitle.outline', 'color')}
-          ${fld('LETRAS MAIÚSCULAS', 'subtitle.uppercase', 'switch')}
-        </div></div>
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Fonte das legendas</h2><p class="muted" style="margin:4px 0 0">Cores, tamanho e posição são automáticos (seguem a sua referência).</p></div></div>
+          ${fontPicker('subtitle.font')}</div>
+        <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Adicionar fontes</h2><p class="muted" style="margin:4px 0 0">Cole o código de incorporação do Google Fonts (fonts.google.com → Get font → Get embed code). Todas as variações do código são baixadas.</p></div></div>
+          ${fontAdder()}</div>
       </div>
     </section>
     <section class="pane" data-p="voz">
@@ -707,7 +773,8 @@ async function viewPerfil(id) {
           ${p.carouselStyleAnalysis ? `<div class="analysis"><b>O que a Claude entendeu:</b> ${esc(p.carouselStyleAnalysis)}</div>` : ''}</div>
         <div class="card"><div class="cardh"><h2 class="h2">Detalhes</h2></div><div class="fields">
           ${fld('Número de slides', 'carouselSlides', 'number', { min: 2, max: 10 })}
-          ${fld('Fonte dos slides', 'carouselFont', 'select', { opts: FONTS.map((f) => [f, f]) })}
+          <div class="field"><span>Fonte dos títulos</span>${fontPicker('carouselFont')}</div>
+          <div class="field"><span>Fonte do texto</span>${fontPicker('carouselBodyFont')}</div>
           ${fld('Como escrever a legenda', 'captionPrompt', 'textarea')}
           ${fld('Hashtags fixas', 'hashtags', 'text', { ph: '#misterio #casosreais' })}
         </div></div>
@@ -738,7 +805,7 @@ async function viewPerfil(id) {
         </div></div>
         <div class="card"><div class="cardh"><h2 class="h2">${ICON.ig.replace('<svg', '<svg width="24" height="24" style="color:#E1306C;vertical-align:-4px"')} Instagram</h2>${p.instagram.username ? `<span class="st done">@${esc(p.instagram.username)}</span>` : '<span class="st">Não conectado</span>'}</div><div class="fields">
           ${fld('Postar no Instagram', 'instagram.enabled', 'switch')}
-          ${fld('Token do Instagram', 'instagram.accessToken', 'password', { ph: 'IGAA…', help: 'Gerado no app da Meta (passo a passo em Ajustes → Como conectar).' })}
+          ${fld('Token do Instagram', 'instagram.accessToken', 'secret', { ph: 'IGAA…', help: 'Gerado no app da Meta (passo a passo em Ajustes → Como conectar).' })}
           <div class="row"><button class="btn" id="bIg">Testar conexão</button></div>
           <div class="fields f3">${fld('Reels', 'instagram.reels', 'switch')}${fld('Carrosséis', 'instagram.carousels', 'switch')}${fld('Imagens', 'instagram.images', 'switch')}</div>
           ${fld('Reels também no feed', 'instagram.shareToFeed', 'switch')}
@@ -746,10 +813,11 @@ async function viewPerfil(id) {
         </div></div>
       </div>
     </section>
-  </div></div>`;
+  </div></div></div>`;
   // fila de temas (array <-> texto)
   $('[data-f="__topics"]').value = (DRAFT.topics || []).join('\n');
   bindProfile(p);
+  bindFonts((field, name) => { setPath(DRAFT, field, name); setDirty(true, saveProfile); });
   showTab(tab);
   renderProfileDash(p);
 }
@@ -771,9 +839,9 @@ function renderProfileDash(p) {
     <div class="card kpi"><div class="label">Inscritos YouTube</div><div class="num">${nf(f.yt)}</div><div class="var ${g7 == null ? 'muted' : g7 >= 0 ? 'up' : 'down'}">${pct(g7)} em 7 dias · ${pct(g30)} em 30</div></div>
     <div class="card kpi"><div class="label">Seguidores Instagram</div><div class="num">${nf(f.ig)}</div><div class="var ${i7 == null ? 'muted' : i7 >= 0 ? 'up' : 'down'}">${pct(i7)} em 7 dias · ${pct(i30)} em 30</div></div>
     <div class="card kpi lime"><div class="label">Média de views por post</div><div class="num">${avg == null ? '—' : nf(Math.round(avg))}</div><div class="var">${posts.length} posts recentes</div></div>
-    <div class="card kpi"><div class="label">Crescimento</div>${spark(ser.map((x) => x.v), 300, 80)}</div>
+    <div class="card kpi"><div class="label">Crescimento</div>${spark(ser.map((x) => x.v), 300, 60)}</div>
   </div>
-  ${top.length ? `<div class="card" style="margin-top:16px"><div class="cardh"><h3 class="h3">Melhores assuntos (a Nara segue estes)</h3><span class="label">views</span></div><div class="list">${top.map((x) => `<div class="item"><div class="t"><b>${esc(x.j.title)}</b><div style="height:6px;border-radius:6px;background:var(--panel3);margin-top:8px"><div style="height:6px;border-radius:6px;background:var(--lime);width:${Math.max(3, (x.v / mx) * 100)}%"></div></div></div><b>${nf(x.v)}</b></div>`).join('')}</div></div>` : ''}`;
+  ${top.length ? `<div class="card" style="margin-top:12px"><div class="cardh"><h3 class="h3">Melhores assuntos (a Nara segue estes)</h3><span class="label">views</span></div><div class="list">${top.map((x) => `<div class="item"><div class="t"><b>${esc(x.j.title)}</b><div style="height:6px;border-radius:6px;background:var(--panel3);margin-top:8px"><div style="height:6px;border-radius:6px;background:var(--lime);width:${Math.max(3, (x.v / mx) * 100)}%"></div></div></div><b>${nf(x.v)}</b></div>`).join('')}</div></div>` : ''}`;
 }
 function bindProfile(p) {
   const root = $('#pwrap');
@@ -849,7 +917,7 @@ function bindProfile(p) {
     d.addEventListener('drop', (e) => { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) upload(p, d.dataset.kind, e.dataTransfer.files[0]); });
     inp.addEventListener('change', () => inp.files[0] && upload(p, d.dataset.kind, inp.files[0]));
     const rm = $('[data-rm]', d);
-    if (rm) rm.onclick = async (e) => { e.stopPropagation(); if (!confirm('Remover esta imagem?')) return; await api(`/api/profiles/${p.id}/image`, { body: { kind: d.dataset.kind, dataUrl: '' } }); await refresh(); keepDraft(() => viewPerfil(p.id)); };
+    if (rm) rm.onclick = async (e) => { e.stopPropagation(); if (!(await ask('Remover esta imagem?', 'Remover', 'Cancelar', true))) return; await api(`/api/profiles/${p.id}/image`, { body: { kind: d.dataset.kind, dataUrl: '' } }); await refresh(); keepDraft(() => viewPerfil(p.id)); };
   });
 }
 function keepDraft(fn) { const d = DRAFT, wasDirty = dirty; fn(); }
@@ -873,7 +941,7 @@ async function upload(p, kind, file) {
 }
 async function saveProfile() {
   const body = structuredClone(DRAFT);
-  if (body.instagram && body.instagram.accessToken && body.instagram.accessToken.includes('••')) delete body.instagram.accessToken;
+  if (body.instagram && (!body.instagram.accessToken || body.instagram.accessToken.includes('••'))) delete body.instagram.accessToken;
   if (body.youtube) delete body.youtube.refreshToken;
   await api('/api/profiles', { body });
   setDirty(false); await refresh();
@@ -938,13 +1006,14 @@ async function viewNara() {
 /* =================== AJUSTES =================== */
 function key(label, f, ph, help) {
   const v = getPath(S.settings, f) || '';
-  return `<label class="field"><span>${label} ${v ? '<span class="st done" style="margin-left:6px">salva</span>' : ''}</span><input type="password" data-s="${f}" placeholder="${esc(v || ph)}" autocomplete="off">${help ? `<small>${help}</small>` : ''}</label>`;
+  return `<label class="field"><span>${label} ${v ? '<span class="st done" style="margin-left:6px">salva</span>' : ''}</span><input type="text" class="secret" data-s="${f}" placeholder="${esc(v || ph)}" autocomplete="off" spellcheck="false" data-lpignore="true" readonly onfocus="this.removeAttribute('readonly')">${help ? `<small>${help}</small>` : ''}</label>`;
 }
 async function viewAjustes() {
   SDRAFT = {};
   const s = S.settings;
   const gstat = await api('/api/google/status').catch(() => ({ keys: [] }));
   const gk = s.googleKeys || ['', '', '', '', ''];
+  await loadFonts();
   $('#view').innerHTML = `
   <div class="head"><div><div class="label">Sistema</div><h1 class="h1">Ajustes<span style="color:var(--lime)">.</span></h1><p>Configure uma vez. A Nara roda sozinha neste PC 24h, mesmo com esta página fechada.</p></div>
   <button class="btn pri" id="bTest">Testar chaves</button></div>
@@ -958,14 +1027,14 @@ async function viewAjustes() {
       <label class="field"><span>Capricho da Claude</span><select data-s="claudeEffort">${[['low', 'Rápido'], ['medium', 'Equilibrado'], ['high', 'Caprichado']].map(([k, t]) => `<option value="${k}" ${s.claudeEffort === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
     </div></div>
     <div class="card"><div class="cardh"><div><h2 class="h2">Google AI Studio</h2><p class="muted" style="margin:6px 0 0">Narração dos vídeos. Até 5 chaves: quando uma esgota, passa para a próxima.</p></div></div><div class="fields">
-      ${gk.map((v, i) => { const st = (gstat.keys || []).find((k) => k.key === v); return `<div class="keyrow"><span class="n">${i + 1}</span><input type="password" data-gk="${i}" placeholder="${esc(v || 'AIza…')}" autocomplete="off">${v ? `<span class="st ${st && st.exhausted ? 'failed' : 'done'}">${st && st.exhausted ? 'esgotada hoje' : 'ativa'}</span>` : '<span class="st">vazia</span>'}</div>`; }).join('')}
+      ${gk.map((v, i) => { const st = (gstat.keys || []).find((k) => k.key === v); return `<div class="keyrow"><span class="n">${i + 1}</span><input type="text" class="secret" data-gk="${i}" placeholder="${esc(v || 'AIza…')}" autocomplete="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')">${v ? `<span class="st ${st && st.exhausted ? 'failed' : 'done'}">${st && st.exhausted ? 'esgotada hoje' : 'ativa'}</span>` : '<span class="st">vazia</span>'}</div>`; }).join('')}
       ${s.googleKey ? `<small class="muted">Chave antiga também em uso: <code>${esc(s.googleKey)}</code></small>` : ''}
       <small class="muted">Crie em aistudio.google.com → Get API key. Use contas Google diferentes para ter mais cota grátis.</small>
     </div></div>
-    <div class="card"><div class="cardh"><h2 class="h2">Extras</h2></div><div class="fields">
+    <div class="card"><div class="cardh"><h2 class="h2">Atom S3R</h2></div><div class="fields">
       ${key('👂 Groq — entender sua voz no Atom (grátis)', 'groqKey', 'gsk_…', 'console.groq.com → API Keys.')}
-      ${key('🖼️ Pexels — mais fotos grátis (opcional)', 'pexelsKey', '', 'pexels.com/api')}
     </div></div>
+    <div class="card" style="grid-column:1/-1"><div class="cardh"><div><h2 class="h2">Fontes</h2><p class="muted" style="margin:4px 0 0">Cole o código de incorporação do Google Fonts. Ficam disponíveis em todos os perfis.</p></div></div>${fontAdder()}</div>
     <div class="card"><div class="cardh"><h2 class="h2">App do YouTube</h2><button class="btn sm ghost" id="bHowYt">Como criar</button></div><div class="fields">
       <label class="field"><span>Client ID ${s.youtubeClientId ? '<span class="st done" style="margin-left:6px">salvo</span>' : ''}</span><input type="text" data-s="youtubeClientId" value="${esc(s.youtubeClientId)}" placeholder="…apps.googleusercontent.com"></label>
       ${key('Client Secret', 'youtubeClientSecret', 'GOCSPX-…')}
@@ -975,7 +1044,7 @@ async function viewAjustes() {
       <label class="field"><span>Fuso horário</span><input type="text" data-s="timezone" value="${esc(s.timezone)}"></label>
       <label class="field"><span>Qualidade do vídeo</span><select data-s="render.quality"><option value="1080" ${s.render.quality == '1080' ? 'selected' : ''}>1080p</option><option value="720" ${s.render.quality == '720' ? 'selected' : ''}>720p (mais rápido)</option></select></label>
       <label class="field"><span>Modelo da Claude</span><input type="text" data-s="claudeModel" value="${esc(s.claudeModel)}"></label>
-      <label class="field"><span>Nova senha da página</span><input type="password" data-s="newAdminToken" placeholder="deixe vazio para manter"></label>
+      <label class="field"><span>Nova senha da página</span><input type="text" class="secret" data-s="newAdminToken" placeholder="deixe vazio para manter" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')"></label>
     </div><button class="btn sm ghost" id="bHowIg" style="margin-top:16px">Como conectar o Instagram</button></div>
     <div class="card"><div class="cardh"><h2 class="h2">Sistema</h2><span class="label">ligada há ${Math.floor(S.system.uptime / 3600)}h${String(Math.floor((S.system.uptime % 3600) / 60)).padStart(2, '0')}</span></div>
       <div class="fields"><div class="field"><span>Abrir no celular/tablet (mesmo Wi-Fi)</span>${(S.system.addresses || []).map((a) => `<code>http://${esc(a)}:${S.system.port}</code>`).join(' ')}</div>
@@ -983,6 +1052,7 @@ async function viewAjustes() {
   </div>`;
   const lg = $('#logs'); lg.scrollTop = lg.scrollHeight;
   bindSettingsInputs();
+  bindFonts();
   $$('[data-gk]').forEach((el) => el.addEventListener('input', () => {
     const arr = SDRAFT.googleKeys || [...gk];
     arr[Number(el.dataset.gk)] = el.value.trim() || gk[Number(el.dataset.gk)];
@@ -1016,7 +1086,7 @@ function bindSettingsInputs() {
     const ev = el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input';
     el.addEventListener(ev, () => {
       const v = el.type === 'checkbox' ? el.checked : el.value.trim();
-      if (el.type === 'password' && !v) { delete SDRAFT[el.dataset.s]; return; }
+      if (el.classList.contains('secret') && !v) { delete SDRAFT[el.dataset.s]; if (!Object.keys(SDRAFT).length) setDirty(false); return; }
       setPath(SDRAFT, el.dataset.s, v);
       setDirty(true, saveSettings);
     });

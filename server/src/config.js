@@ -57,14 +57,15 @@ const DEFAULT_PROFILE = () => ({
   customTimes: '', // "09:00, 18:30" sobrescreve a distribuição automática
   videoFormat: 'short', // short (9:16) | long (16:9)
   videoSeconds: 50, // duração de cada vídeo em segundos (a página mostra em minutos)
-  videoStyle: '2d', // 2d | 3d | realista | documentario | anime | minimalista
+  videoStyle: '2d', // texto livre (ex.: "2D estilo investigação, traço grosso")
   imageSource: 'mix', // web | ai | mix
   videoPrompt: '', // o "prompt do vídeo" que você já usa hoje
   voice: 'Kore',
   voiceStyle: 'Fale em português do Brasil, com ritmo dinâmico e tom de narrador de documentário.',
   music: true,
   subtitle: {
-    font: 'Anton',
+    auto: true, // cores, tamanho e posição automáticos (só a fonte é escolhida)
+    font: 'Anton Regular',
     size: 80,
     color: '#FFFFFF',
     highlight: '#FFD400',
@@ -84,7 +85,8 @@ const DEFAULT_PROFILE = () => ({
   // Carrossel / imagem
   carouselSlides: 6,
   carouselPrompt: '',
-  carouselFont: 'Poppins',
+  carouselFont: 'Poppins ExtraBold', // fonte dos títulos
+  carouselBodyFont: 'Poppins Regular', // fonte do texto
   carouselReference: '', // imagem de referência só do carrossel
   carouselStyleAnalysis: '',
   // Legenda / post

@@ -106,7 +106,7 @@ async function produceVideo(job, p) {
   const orientation = p.videoFormat === 'long' ? 'landscape' : 'portrait';
   for (let i = 0; i < scenes.length; i++) {
     scenes[i].image = await images.getImage({
-      search: scenes[i].search, visual: scenes[i].visual, styleHint: p.styleAnalysis || writer.STYLE_LABEL[p.videoStyle],
+      search: scenes[i].search, visual: scenes[i].visual, styleHint: p.styleAnalysis || (writer.STYLE_LABEL[p.videoStyle] || p.videoStyle),
       source: p.imageSource, orientation, dest: path.join(dir, `img_${String(i).padStart(2, '0')}.jpg`), index: i,
     });
   }
@@ -132,7 +132,7 @@ async function produceImages(job, p) {
   for (let i = 0; i < slides.length; i++) {
     step(job, `Criando imagem ${i + 1}/${slides.length}…`);
     const img = await images.getImage({
-      search: slides[i].search, visual: slides[i].visual, styleHint: p.carouselStyleAnalysis || p.styleAnalysis || writer.STYLE_LABEL[p.videoStyle],
+      search: slides[i].search, visual: slides[i].visual, styleHint: p.carouselStyleAnalysis || p.styleAnalysis || (writer.STYLE_LABEL[p.videoStyle] || p.videoStyle),
       source: p.imageSource, orientation: 'portrait', dest: path.join(dir, `bg_${i}.jpg`), index: i,
     });
     files.push(await render.renderSlide({ dir, index: i, total: slides.length, slide: slides[i], image: img, profile: p, handle: p.instagram.username }));

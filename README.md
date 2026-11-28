@@ -48,15 +48,18 @@ Cada vídeo é uma conversa **nova e descartável** (não acumula nada e não tr
 - **Painel**: números do dia, crescimento, agenda, produções (aprovar / ver / tentar de novo) e conversa com a Nara.
 - **Perfis**: biblioteca com as capas. Clique num perfil para configurar:
   - **Identidade** — nome, nicho, público, tom, fila de temas, **capa** e **logo** (chamada final dos vídeos).
-  - **Vídeo** — **prompt padrão** (a IA só muda o assunto), duração em minutos, formato, estilo, **referência de layout**, legendas.
+  - **Vídeo** — **prompt padrão** (a IA só muda o assunto), duração em minutos, formato, estilo visual (texto livre), **referência de layout** e a **fonte das legendas** (cores, tamanho e posição são automáticos).
   - **Voz** — as 30 vozes do Google, **tom** da voz e botão **Ouvir amostra**.
-  - **Carrossel** — prompt padrão, referência própria, slides, legenda, hashtags.
+  - **Carrossel** — prompt padrão, referência própria, **fonte dos títulos + fonte do texto**, slides, legenda, hashtags.
   - **Frequência** — vídeos/carrosséis/imagens por dia, dias da semana, horários, postar sozinha, seguir o engajamento.
   - **Publicação** — regras do **YouTube** e do **Instagram** (o mesmo perfil pode postar nos dois).
   - No topo: **mini dashboard** (seguidores, crescimento 7/30 dias, média de views, melhores assuntos).
 - **Agenda**: tudo o que está agendado e o histórico.
 - **Nara**: conversa, voz dela, briefing automático e dados do Atom S3R.
-- **Ajustes**: chaves (DeepSeek, Claude opcional, **5 chaves do Google**, Groq, Pexels), app do YouTube, sistema e registro.
+- **Ajustes**: chaves (DeepSeek, Claude opcional, **5 chaves do Google**, Groq), app do YouTube, **fontes**, sistema e registro.
+
+**Fontes:** em fonts.google.com escolha a fonte → **Get font → Get embed code** → copie o `<link …>` e cole em **Adicionar fontes**
+(no perfil, aba Vídeo, ou em Ajustes). A Nara baixa todas as variações (pesos) do código e elas aparecem para escolher em todos os perfis.
 
 > Tudo também pode ser mudado **conversando** com a Nara: "muda o perfil X para 3 vídeos por dia de 2 minutos, só de segunda a sexta", "troca a voz do perfil Y para Charon", "cria um perfil chamado Z sobre história do Brasil".
 

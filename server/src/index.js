@@ -14,6 +14,7 @@ const youtube = require('./publish/youtube');
 const instagram = require('./publish/instagram');
 const { DATA_DIR, WEB_DIR, logger, nowInTz, uid } = require('./util');
 const { FONTS_DIR } = require('./media/render');
+const fonts = require('./media/fonts');
 
 const PORT = Number(process.env.PORT) || 8080;
 const MIME = { '.ttf': 'font/ttf', '.otf': 'font/otf', '.woff2': 'font/woff2', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
@@ -212,6 +213,16 @@ async function route(req, res) {
   if (m === 'GET' && p === '/api/voices') {
     return send(res, 200, { google: llm.GOOGLE_VOICES, nara: voice.NARA_VOICES });
   }
+  if (m === 'GET' && p === '/api/fonts') return send(res, 200, { fonts: fonts.list() });
+  if (m === 'POST' && p === '/api/fonts') {
+    const b = await json(req);
+    const added = await fonts.addFromEmbed(b.code);
+    return send(res, 200, { added, fonts: fonts.list() });
+  }
+  if ((mm = p.match(/^\/api\/fonts\/([\w.-]+)$/)) && m === 'DELETE') {
+    fonts.remove(mm[1]);
+    return send(res, 200, { fonts: fonts.list() });
+  }
   if (m === 'GET' && p === '/api/google/status') return send(res, 200, { keys: llm.keyStatus() });
   // amostra da voz de narração (gasta um pouquinho da cota do Google)
   if (m === 'POST' && p === '/api/voice/preview') {
@@ -344,6 +355,7 @@ server.listen(PORT, '0.0.0.0', () => {
   logger.info('==============================================');
   scheduler.start();
   jobs.work();
+  fonts.ensureDefaults();
   setTimeout(() => {
     const today = nowInTz(s.timezone).date;
     if (!analytics.all()[today] && config.load().profiles.length) analytics.snapshot().catch(() => {});
