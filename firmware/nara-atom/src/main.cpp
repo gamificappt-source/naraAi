@@ -48,7 +48,69 @@ void loadCfg() {
   cfg.listen = prefs.getBool("listen", ALWAYS_LISTEN);
   cfg.threshold = prefs.getInt("thr", VOICE_THRESHOLD);
   prefs.end();
+  cfg.ssid.trim();
+  cfg.server.trim();
+  cfg.token.trim();
   while (cfg.server.endsWith("/")) cfg.server.remove(cfg.server.length() - 1);
+  if (cfg.server.length() && !cfg.server.startsWith("http")) cfg.server = "http://" + cfg.server;
+}
+
+// ---------- configuração e diagnóstico pelo cabo USB ----------
+//  SHOW                       → mostra a configuração e a conexão
+//  SET chave=valor            → ssid, pass, server, token, voice (0/1), listen (0/1), thr
+//  TEST                       → testa a conversa com a Nara
+//  RESTART                    → reinicia
+int pingNara() {
+  if (WiFi.status() != WL_CONNECTED || cfg.server.isEmpty()) return -100;
+  HTTPClient http;
+  http.begin(cfg.server + "/api/device/status");
+  http.addHeader("x-nara-token", cfg.token);
+  http.setTimeout(8000);
+  int code = http.GET();
+  http.end();
+  return code;
+}
+
+void printCfg() {
+  Serial.println("=== NARA ATOM ===");
+  Serial.printf("ssid=%s\n", cfg.ssid.c_str());
+  Serial.printf("pass=%d caracteres\n", cfg.pass.length());
+  Serial.printf("server=%s\n", cfg.server.c_str());
+  Serial.printf("token=%s\n", cfg.token.c_str());
+  Serial.printf("voice=%d listen=%d thr=%d\n", cfg.voiceBase, cfg.listen, cfg.threshold);
+  Serial.printf("wifi=%s ip=%s rssi=%d\n", WiFi.status() == WL_CONNECTED ? "conectado" : "desconectado", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+  Serial.println("=================");
+}
+
+void handleSerial() {
+  if (!Serial.available()) return;
+  String line = Serial.readStringUntil('\n');
+  line.trim();
+  if (line.isEmpty()) return;
+  if (line.equalsIgnoreCase("SHOW")) { printCfg(); return; }
+  if (line.equalsIgnoreCase("RESTART")) { Serial.println("OK reiniciando"); delay(300); ESP.restart(); }
+  if (line.equalsIgnoreCase("TEST")) { Serial.printf("TEST Nara respondeu: %d\n", pingNara()); return; }
+  if (line.startsWith("SET ") || line.startsWith("set ")) {
+    String kv = line.substring(4);
+    int eq = kv.indexOf('=');
+    if (eq < 1) { Serial.println("ERRO use SET chave=valor"); return; }
+    String k = kv.substring(0, eq), v = kv.substring(eq + 1);
+    k.trim();
+    prefs.begin("nara", false);
+    if (k == "ssid") prefs.putString("ssid", v);
+    else if (k == "pass") prefs.putString("pass", v);
+    else if (k == "server") prefs.putString("server", v);
+    else if (k == "token") prefs.putString("token", v);
+    else if (k == "voice") prefs.putBool("voice", v.toInt() != 0);
+    else if (k == "listen") prefs.putBool("listen", v.toInt() != 0);
+    else if (k == "thr") prefs.putInt("thr", v.toInt() > 0 ? v.toInt() : 1800);
+    else { prefs.end(); Serial.println("ERRO chave desconhecida"); return; }
+    prefs.end();
+    loadCfg();
+    Serial.printf("OK %s salvo\n", k.c_str());
+    return;
+  }
+  Serial.println("ERRO comando desconhecido (SHOW, SET chave=valor, TEST, RESTART)");
 }
 
 static const uint32_t MIC_RATE = 16000;
@@ -242,7 +304,7 @@ void runSetupPortal() {
     ESP.restart();
   });
   web.begin();
-  for (;;) { dns.processNextRequest(); web.handleClient(); M5.update(); delay(2); }
+  for (;;) { dns.processNextRequest(); web.handleClient(); M5.update(); handleSerial(); delay(2); }
 }
 
 // ---------- programa ----------
@@ -252,6 +314,7 @@ void setup() {
   if (cfg.voiceBase) mc.external_speaker.atomic_echo = true;  // base de voz (ES8311: microfone + alto-falante)
   M5.begin(mc);
   Serial.begin(115200);
+  Serial.setTimeout(200);
   delay(300);
   hasDisplay = M5.Display.width() > 0 && M5.Display.height() > 0;
   if (hasDisplay) M5.Display.setTextSize(1.5);
@@ -267,11 +330,22 @@ void setup() {
   // não conectou no Wi-Fi em 30s → abre o modo configuração para corrigir
   if (WiFi.status() != WL_CONNECTED) runSetupPortal();
   Serial.printf("Nara pronta. Microfone: %s\n", micOk ? "sim" : "nao (modo botao)");
+  printCfg();
+  Serial.printf("Nara respondeu: %d\n", pingNara());  // avisa a Nara que ligou (aparece em "Último contato")
 }
+
+static uint32_t lastPing = 0;
 
 void loop() {
   M5.update();
+  handleSerial();
   if (WiFi.status() != WL_CONNECTED) connectWiFi();
+  // a cada 60 s avisa a Nara que está vivo
+  if (millis() - lastPing > 60000) {
+    lastPing = millis();
+    int c = pingNara();
+    if (c != 200) Serial.printf("Nara respondeu: %d\n", c);
+  }
 
   // segurar 1s = briefing
   if (M5.BtnA.wasHold()) { wakeBriefing(); return; }

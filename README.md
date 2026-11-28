@@ -119,7 +119,12 @@ Gravar a Nara **substitui** o xiaozhi (dá para voltar depois pelo M5Burner).
 **Usar:** clique no botão e fale ("Nara, posta um vídeo extra hoje") · segure 1 s = briefing · com escuta contínua, é só falar "Nara, …".
 Precisa da chave **Groq** (grátis) em Ajustes para ela entender sua voz.
 
-> 💡 No roteador, reserve um **IP fixo** para este PC (DHCP → reserva por endereço MAC). Assim o endereço do Atom nunca muda.
+> 💡 **Roteador de operadora que isola os aparelhos do Wi‑Fi?** Use a **rede própria da Nara**: aba **Nara → "Rede Wi‑Fi própria da Nara"**.
+> O PC cria a rede **Nara-Atom** (Hotspot móvel do Windows, religado sozinho) e o Atom usa o endereço **`http://192.168.137.1:8080`**.
+>
+> **Configurar/diagnosticar pelo cabo USB** (sem Nara-Setup): abra a porta serial do Atom (115200) e mande
+> `SHOW` (mostra a configuração), `SET server=http://192.168.137.1:8080` (ou `ssid`, `pass`, `token`, `listen=1`, `voice=1`, `thr`),
+> `TEST` (testa a Nara) e `RESTART`. Ao ligar e a cada minuto o Atom avisa a Nara — aparece em **"Último contato do Atom"**.
 
 ---
 
